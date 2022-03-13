@@ -1,0 +1,84 @@
+#include "merger.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+#include <sys/times.h>
+
+#define TEMPFILE "temp.txt"
+#define REPORTFILE "raport2.txt"
+
+int main(int argc, char * argv[]) {
+	int pairs=0;
+	char *pair, *path1, *path2, *pch;
+	FILE *fa, *fb;
+	FILE *ftemp;
+	FILE *freport = fopen(REPORTFILE, "a");
+	char ***blox;
+	clock_t s1, e1;  // clock start and end
+	struct tms s2, e2;  // clock start and end
+	double treal, tuser, tsys;
+	
+	for(int n=1; n<argc; n++) {
+		if(strcmp(argv[n], "create_table") == 0) {
+			pairs = atoi(argv[++n]);
+			blox = create_table(pairs);
+			printf("<table created>\n");
+		}
+		else if(strcmp(argv[n], "merge_files") == 0) {
+			char *pair;
+			for(int i=0; i<pairs; i++) {
+				pair = argv[++n];
+				pch = strtok(pair, ":");
+				path1 = pch;
+				pch = strtok(NULL, ":");
+				path2 = pch;
+				printf("<merging %s and %s>\n", path1, path2);
+				FILE *fa = fopen(path1, "r");
+				FILE *fb = fopen(path2, "r");
+				ftemp = fopen(TEMPFILE, "w+");
+				merge_two(fa, fb, ftemp);
+				create_block(ftemp, blox, i);
+				fclose(fa);
+				fclose(fb);
+				fclose(ftemp);
+			}
+			printf("<merged>\n");
+		}
+		else if(strcmp(argv[n], "print") == 0) {
+			print(blox, pairs);
+		}
+		else if(strcmp(argv[n], "remove_block") == 0) {
+			int id = atoi(argv[++n]);
+			remove_block(blox, id);
+			printf("<block removed>\n");
+		}
+		else if(strcmp(argv[n], "remove_row") == 0) {
+			int id = atoi(argv[++n]);
+			int line = atoi(argv[++n]);
+			remove_line(blox, id, line);
+			printf("<row removed>\n");
+		}
+		else if(strcmp(argv[n], "tstart") == 0) {
+			s1 = times(&s2);
+		}
+		else if(strcmp(argv[n], "tstop") == 0) {
+			e1 = times(&e2);
+			treal = ((double) (e1 - s1)) / CLOCKS_PER_SEC;
+			tuser = ((double) (e2.tms_utime - s2.tms_utime)) / CLOCKS_PER_SEC;
+			tsys  = ((double) (e2.tms_stime - s2.tms_stime)) / CLOCKS_PER_SEC;
+			for(int r=1; r<argc; r++) {
+				fprintf(freport, "%s ", argv[r]);
+			}
+			fprintf(freport, "\n");
+			fprintf(freport, "Real time: %f\n", treal);
+			fprintf(freport, "User time: %f\n", tuser);
+			fprintf(freport, "System time: %f\n\n", tsys);
+		}
+	}
+	if(pairs > 0) {
+		remove_all(blox, pairs);
+		free(blox);
+		printf("<memory freed>\n");
+	}
+}

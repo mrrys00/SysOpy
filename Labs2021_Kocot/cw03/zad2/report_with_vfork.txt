@@ -1,0 +1,78 @@
+create_table 5 tstart merge_files mini1.txt:mini2.txt repeat_merge tstop 
+Real time: 0.00 sec
+User time: 0.00 sec
+System time: 0.00 sec
+
+create_table 50 tstart merge_files mini1.txt:mini2.txt repeat_merge tstop 
+Real time: 0.03 sec
+User time: 0.00 sec
+System time: 0.00 sec
+
+create_table 500 tstart merge_files mini1.txt:mini2.txt repeat_merge tstop 
+Real time: 0.15 sec
+User time: 0.00 sec
+System time: 0.01 sec
+
+create_table 5 tstart merge_files small1.txt:small2.txt repeat_merge tstop 
+Real time: 0.01 sec
+User time: 0.00 sec
+System time: 0.00 sec
+
+create_table 50 tstart merge_files small1.txt:small2.txt repeat_merge tstop 
+Real time: 0.04 sec
+User time: 0.00 sec
+System time: 0.00 sec
+
+create_table 500 tstart merge_files small1.txt:small2.txt repeat_merge tstop 
+Real time: 0.21 sec
+User time: 0.00 sec
+System time: 0.01 sec
+
+create_table 5 tstart merge_files medium1.txt:medium2.txt repeat_merge tstop 
+Real time: 0.01 sec
+User time: 0.00 sec
+System time: 0.00 sec
+
+create_table 50 tstart merge_files medium1.txt:medium2.txt repeat_merge tstop 
+Real time: 0.04 sec
+User time: 0.00 sec
+System time: 0.00 sec
+
+create_table 500 tstart merge_files medium1.txt:medium2.txt repeat_merge tstop 
+Real time: 0.23 sec
+User time: 0.00 sec
+System time: 0.01 sec
+
+create_table 5 tstart merge_files big1.txt:big2.txt repeat_merge tstop 
+Real time: 0.03 sec
+User time: 0.00 sec
+System time: 0.00 sec
+
+create_table 50 tstart merge_files big1.txt:big2.txt repeat_merge tstop 
+Real time: 0.14 sec
+User time: 0.00 sec
+System time: 0.00 sec
+
+create_table 500 tstart merge_files big1.txt:big2.txt repeat_merge tstop 
+Real time: 2.26 sec
+User time: 0.00 sec
+System time: 0.02 sec
+
+create_table 5 tstart merge_files large1.txt:large2.txt repeat_merge tstop 
+Real time: 0.11 sec
+User time: 0.00 sec
+System time: 0.00 sec
+
+create_table 50 tstart merge_files large1.txt:large2.txt repeat_merge tstop 
+Real time: 1.02 sec
+User time: 0.00 sec
+System time: 0.00 sec
+
+create_table 500 tstart merge_files large1.txt:large2.txt repeat_merge tstop 
+Real time: 11.66 sec
+User time: 0.00 sec
+System time: 0.02 sec
+
+### Czasy sa porownywalne, ale czasy User i System sa prawie zerowe. Moze to wynikac z faktu,
+###     ze przez wiekszosc czasu proces macierzysty nie byl w ogole wykonywany, a wszystkie
+###     zadania wykonywane byly przez procesy potomne. 

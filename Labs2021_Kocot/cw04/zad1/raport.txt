@@ -1,0 +1,16 @@
+1. Handler
+    Sygnal zostaje wykryty raz w procesie macierzystym i raz w procesie potomnym, co oznacza,
+    ze sygnaly nie przechodza miedzy nimi
+
+2. Mask
+    Sygnal jest blokowany zarowno w glownym programie, jak i w tym wywolanym za pomoca exec.
+    Oznacza to, ze maska pozostaje przypisana do procesu, wiec program wywolany przez exec ja
+    dziedziczy. Jest tez blokowany w procesie potomnym, wiec maska jest dziedziczona.
+
+3. Ignore
+    Tak samo jak przy podpunkcie Mask
+
+4. Pending
+    Sygnal oczekuje zarowno w glownym programie, jak i tym wywolanym za pomoca funkcji exec, wiec
+    kolejka oczekujacych sygnalow nalezy do procesu. Z tego powodu proces potomny nie posiada tego
+    sygnalu w stanie pending (jest innym procesem).

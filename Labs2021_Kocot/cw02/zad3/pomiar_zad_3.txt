@@ -1,0 +1,10 @@
+OPEN():
+real 1.24
+user 0.34
+sys 0.53
+
+FOPEN():
+real 0.02
+user 0.01
+sys 0.00
+
