@@ -9,8 +9,8 @@
 #define AWKUTIL "| awk '{print $1}'"
 
 int main(int argc, char * argv[]) {
-    FILE fp_in = fopen(FILENAME);
-    FILE fp_out = fopen(CNTFILE);
+//    FILE fp_in = fopen(FILENAME);
+//    FILE fp_out = fopen(CNTFILE);
     char *command = (char*)malloc(200 * sizeof(char));
     sprintf(command, "wc -l %s %s > %s && wc -w %s %s >> %s && wc -m %s %s >> %s", FILENAME, AWKUTIL, CNTFILE, FILENAME, AWKUTIL, CNTFILE, FILENAME, AWKUTIL, CNTFILE);
 //    char command[200] = "wc -l " + FILENAME + " > " + CNTFILE + " && wc -w " + FILENAME + " >> " + CNTFILE + " && wc -m " + FILENAME + " >> " + CNTFILE;
