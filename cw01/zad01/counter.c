@@ -2,91 +2,49 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <fcntl.h>
 
-#define TEMPCNTFILE "cnt_file"
 #define AWKUTIL "| awk '{print $1}'"
+#define TEMPFILENAME "cnt_file.temp"
 
-char*** create_table(int size) {        // chyba działa
-	return (char***) calloc(size, sizeof(char**));
+void** create_table(int size) {
+	return calloc(sizeof(void*), size);
 }
 
-void count_all(char *fn) {              // chyba działa
-    char *command = (char*)malloc(200 * sizeof(char));
+void wc_files(char *fn) {
+    char *command = (char*)malloc(200 * sizeof(char));      // assume that command will be shorter than 200 characters
     // count and dump to tmp file using default bash command wc with proper flags
-    sprintf(command, "wc -l %s %s > %s && wc -w %s %s >> %s && wc -m %s %s >> %s", fn, AWKUTIL, TEMPCNTFILE, fn, AWKUTIL, TEMPCNTFILE, fn, AWKUTIL, TEMPCNTFILE);
+    sprintf(command, "wc -l %s %s > %s && wc -w %s %s >> %s && wc -m %s %s >> %s", fn, AWKUTIL, TEMPFILENAME, fn, AWKUTIL, TEMPFILENAME, fn, AWKUTIL, TEMPFILENAME);
     system(command);
     return;
 }
 
-int create_block(FILE *fp, char ***main, int id) {      // chyba NIE działa
-	main[id] = (char**) calloc(1, sizeof(char*));
-	char c = '\n';
-	int line = 0;  // line id inside the block
-	int llen;  // present line length
-	rewind(fp);
-	while(c != EOF) {
-		llen = 0;
-		while((c = fgetc(fp)) != '\n' && c != EOF) {
-			llen++;
-		}
-		main[id] = (char**) realloc(main[id], (line+2)*sizeof(char*));
-//		main[id][line++] = (char*) calloc(llen+1, sizeof(char));
-	}
-//	rewind(fp);
-//	c = '\n';
-//	line = 0;
-//	while(c != EOF) {
-//		llen = 0;
-//		while((c = fgetc(fp)) != '\n' && c != EOF) {
-//			main[id][line][llen++] = c;
-//		}
-//		line++;
-//	}
-//	main[id][line] = NULL;  // last pointer is made NULL, to indicate array length
-	return id;
+int create_block(void **main_arr, int arr_size) {
+    int fp = open(TEMPFILENAME, O_RDONLY);
+    // lseek - find bytes length
+    long size = lseek(fp, 0, SEEK_END);
+    // return to the beginning
+    lseek(fp, 0, SEEK_SET);
+    main_arr[arr_size] = calloc(sizeof(char), size + 1);
+    read(fp, main_arr[arr_size], size);
+    // end of data sign \0
+    ((char **)main_arr)[arr_size][size] = '\0';
+    close(fp);
+    remove(TEMPFILENAME);
+    return arr_size+1;
 }
 
-int block_size(char ***main, int id) {      // de facto to mi nie potrzebne chyba
-	int lines = 0;
-	if(main[id] != NULL) {
-		while(main[id][lines] != NULL) {
-			lines++;
-		}
-	}
-	return lines;
+void remove_block(void **main_arr, int id) {
+    free(main_arr[id]);
+    main_arr[id] = NULL;
+    return;
 }
 
-//void remove_line(char ***main, int id, int line) {
-//	int bsize = block_size(main, id);
-//	for(int i=line; i < bsize; i++) {
-//		main[id][i] = main[id][i+1];
-//	}
-//	free(main[id][bsize]);
-//	main[id] = (char**) realloc(main[id], (bsize)*sizeof(char*));
-//}
-
-void remove_block(char ***main, int id) {
-	int bsize = block_size(main, id);
-	for(int i=0; i<bsize; i++) {
-		free(main[id][i]);
-	}
-	free(main[id]);
-	main[id] = NULL;
+void clean_all(void **main_arr, int size) {
+    for (int i = 0; i < size; i++) {
+        remove_block(main_arr, i);
+    }
+    free(main_arr);
+    main_arr = NULL;
+    return;
 }
-
-void remove_all(char ***main, int size) {
-	for(int i=0; i<size; i++) {
-		remove_block(main, i);
-	}
-}
-
-//void print(char ***main, int size) {
-//	for(int b=0; b<size; b++) {
-//		if(main[b] != NULL) {
-//			for(int i=0; main[b][i] != NULL; i++) {
-//				printf("%s\n", main[b][i]);
-//			}
-//			printf("\n");
-//		}
-//	}
-//}

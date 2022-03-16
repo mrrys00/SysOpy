@@ -1,14 +1,16 @@
-CC = gcc -Wall -std=c11 -ggdb
+GCCF = gcc -O0 -Wall -std=c11 -ggdb
 
-static:
-	$(CC) -c lib.c
-	ar rcs libmerge.a lib.o
+.PHONY: all
+all: static_lib shared_lib
 
-shared:
-	$(CC) -c -fPIC lib.c
-	$(CC) -shared -fPIC -o libmerge_shared.so lib.o
+static_lib:
+	$(GCCF) -c counter.c
+	ar rcs cntlib.a counter.o
 
-all: static shared 
+shared_lib:
+	$(GCCF) -c -fPIC counter.c
+	$(GCCF) -shared -fPIC -o cntlib_shd.so counter.o
 
+.PHONY: clean
 clean:
 	rm -f *.o *.a *.so
