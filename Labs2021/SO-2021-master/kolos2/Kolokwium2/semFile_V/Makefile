@@ -2,7 +2,7 @@ CFLAGS = -Wall
 CC = gcc
 
 main: main.c
-	$(CC) $^ -o $@ $(CFLAGS)
+	$(GCCF) $^ -o $@ $(CFLAGS)
 
 clean:
 	rm -f main.o main

@@ -3,7 +3,7 @@ LDLIBS=-pthread
 CC = gcc
 
 main: main.c
-	$(CC) $^ -o $@ $(CFLAGS) -lpthread
+	$(GCCF) $^ -o $@ $(CFLAGS) -lpthread
 
 test: ${PROG}
 	@echo -e "\n\nTESTING\n\n"

@@ -2,10 +2,10 @@ CFLAGS = -Wall -lrt
 CC = gcc
 
 sender: sender.c
-	$(CC) $^ -o $@ $(CFLAGS)
+	$(GCCF) $^ -o $@ $(CFLAGS)
 
 receiver: receiver.c
-	$(CC) $^ -o $@ $(CFLAGS)
+	$(GCCF) $^ -o $@ $(CFLAGS)
 
 clean:
 	rm -f sender.o sender receiver.o receiver
