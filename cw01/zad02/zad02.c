@@ -1,15 +1,11 @@
 //
-// Created by mrrys00 on 3/13/22.
+// Created by mrrys00 on 3/16/22.
 //
-#include <stdio.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
-
-#include "../zad01/counter.h"
-
-//#define FILENAME "test.c"
-//#define CNTFILE "cnt_file"
-//#define AWKUTIL "| awk '{print $1}'"
+#include <sys/times.h>
+#include "../zad01/counter.c"
 
 // 1 - true
 int is_filename(char* fn) {
@@ -27,10 +23,6 @@ int is_create_table(char* arg) {
 
 int is_wc_lines(char* arg) {
     return strcmp(arg, "wc_lines") == 0 ? 1 : 0;
-}
-
-int is_create_block(char* arg) {
-    return strcmp(arg, "create_block") == 0 ? 1 : 0;
 }
 
 int is_remove_block(char* arg) {
@@ -59,18 +51,15 @@ int main(int argc, char ** args) {
                 printf("saved to tmp file\n");
             }
 
-        } else if (i+1 < argc && is_create_block(args[i])) {
-            size = create_block(arr, size);
         } else if (i+1 < argc && is_remove_block(args[i])) {
-            i++;
-            remove_block(arr, atoi(args[i]));
             printf("block removed\n");
         } else if (is_clean_all(args[i])) {
-            clean_all(arr, size);
+//            clean_all(arr, )
             printf("all cleaned\n");
         }
 
     }
+
     free(arr);
     return 0;
 }
