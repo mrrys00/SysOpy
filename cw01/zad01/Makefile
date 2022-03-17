@@ -1,4 +1,4 @@
-GCCF = gcc -O0 -Wall -std=c11 -ggdb
+GCCF = gcc -O0 -Wall -std=c17 -ggdb
 
 .PHONY: all
 all: static_lib shared_lib

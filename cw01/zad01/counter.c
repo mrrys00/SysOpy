@@ -7,6 +7,13 @@
 #define AWKUTIL "| awk '{print $1}'"
 #define TEMPFILENAME "cnt_file.temp"
 
+char* SCREATETABLE = "create_table";
+char* SWCFILES = "wc_files";
+char* SCREATEBLOCK = "create_block";
+char* SREMOVEBLOCK = "remove_block";
+char* SCLEANALL = "clean_all";
+char* SOPERNAME = "all_operation_name";
+
 void** create_table(int size) {
 	return calloc(sizeof(void*), size);
 }
@@ -14,7 +21,11 @@ void** create_table(int size) {
 void wc_files(char *fn) {
     char *command = (char*)malloc(200 * sizeof(char));      // assume that command will be shorter than 200 characters
     // count and dump to tmp file using default bash command wc with proper flags
-    sprintf(command, "wc -l %s %s > %s && wc -w %s %s >> %s && wc -m %s %s >> %s", fn, AWKUTIL, TEMPFILENAME, fn, AWKUTIL, TEMPFILENAME, fn, AWKUTIL, TEMPFILENAME);
+    if (access(TEMPFILENAME, F_OK) == 0) {
+        sprintf(command, "wc -lwm %s %s >> %s", fn, AWKUTIL, TEMPFILENAME);
+    } else {
+        sprintf(command, "wc -lwm %s %s > %s", fn, AWKUTIL, TEMPFILENAME);
+    }
     system(command);
     return;
 }
