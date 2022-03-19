@@ -78,7 +78,7 @@ int main(int argc, char ** args) {
     void ** arr = NULL;
     int size = 0, used_size = 0;
     char all_operation_name[50];
-    int every_log = 0;
+    int every_log = 0;              // change flag to catch all times
 
     clock_t s1, fs1;
     struct tms s2, fs2;
@@ -122,6 +122,9 @@ int main(int argc, char ** args) {
             start_time_measure(&fs1, &fs2);
         } else if (strcmp(args[i], "tf") == 0) {
             finish_time_measure(fs1, fs2, all_operation_name);
+        } else if (strcmp(args[i], "every_log") == 0) {
+            if (every_log == 0) every_log = 1;
+            else every_log = 0;
         }
     }
     return 0;

@@ -1,0 +1,135 @@
+Operation 1small execution times:
+User time: 0.000000
+System time: 0.000000
+Real time: 0.010000
+
+Operation create_block_1small execution times:
+User time: 0.000000
+System time: 0.000000
+Real time: 0.000000
+
+Operation remove_block_1small execution times:
+User time: 0.000000
+System time: 0.000000
+Real time: 0.000000
+
+Operation 5small execution times:
+User time: 0.000000
+System time: 0.000000
+Real time: 0.010000
+
+Operation create_block_5small execution times:
+User time: 0.000000
+System time: 0.000000
+Real time: 0.000000
+
+Operation remove_block_5small execution times:
+User time: 0.000000
+System time: 0.000000
+Real time: 0.000000
+
+Operation 10small execution times:
+User time: 0.000000
+System time: 0.000000
+Real time: 0.020000
+
+Operation create_block_10small execution times:
+User time: 0.000000
+System time: 0.000000
+Real time: 0.000000
+
+Operation remove_block_10small execution times:
+User time: 0.000000
+System time: 0.000000
+Real time: 0.000000
+
+Operation 1medium execution times:
+User time: 0.000000
+System time: 0.000000
+Real time: 0.000000
+
+Operation create_block_1medium execution times:
+User time: 0.000000
+System time: 0.000000
+Real time: 0.000000
+
+Operation remove_block_1medium execution times:
+User time: 0.000000
+System time: 0.000000
+Real time: 0.000000
+
+Operation 5medium execution times:
+User time: 0.000000
+System time: 0.000000
+Real time: 0.020000
+
+Operation create_block_5medium execution times:
+User time: 0.000000
+System time: 0.000000
+Real time: 0.000000
+
+Operation remove_block_5medium execution times:
+User time: 0.000000
+System time: 0.000000
+Real time: 0.000000
+
+Operation 10medium execution times:
+User time: 0.000000
+System time: 0.000000
+Real time: 0.030000
+
+Operation create_block_10medium execution times:
+User time: 0.000000
+System time: 0.000000
+Real time: 0.000000
+
+Operation remove_block_10medium execution times:
+User time: 0.000000
+System time: 0.000000
+Real time: 0.000000
+
+Operation 1big execution times:
+User time: 0.000000
+System time: 0.000000
+Real time: 0.010000
+
+Operation create_block_1big execution times:
+User time: 0.000000
+System time: 0.000000
+Real time: 0.000000
+
+Operation remove_block_1big execution times:
+User time: 0.000000
+System time: 0.000000
+Real time: 0.000000
+
+Operation create_block_5big execution times:
+User time: 0.000000
+System time: 0.000000
+Real time: 0.000000
+
+Operation remove_block_5big execution times:
+User time: 0.000000
+System time: 0.000000
+Real time: 0.000000
+
+Operation 10big execution times:
+User time: 0.000000
+System time: 0.000000
+Real time: 0.080000
+
+Operation create_block_10big execution times:
+User time: 0.000000
+System time: 0.000000
+Real time: 0.000000
+
+Operation remove_block_10big execution times:
+User time: 0.000000
+System time: 0.000000
+Real time: 0.000000
+
+Operation create_remove_blocks execution times:
+User time: 0.000000
+System time: 0.000000
+Real time: 0.000000
+
