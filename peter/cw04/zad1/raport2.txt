@@ -1,0 +1,10 @@
+Dla potomka stworzonego funkcja fork():
+    "signal handler" jest dziedziczony
+    ignorowanie sygnalu jest dziedziczone
+    maskowanie jest dziedziczone
+    Blokowany sygnal (pending) nie jest dziedziczony
+
+po wykonaniu exec():
+    ignorowanie sygnalu jest dziedziczone
+    maskowanie jest dziedzieczone
+    Blokowany sygnal (pending) jest dziedziczony

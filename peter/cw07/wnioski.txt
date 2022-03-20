@@ -1,0 +1,2 @@
+Dzięki semaforom pilnującym przekoroczenie rozmiarów tablicy obie wersje programu działąją zarówno dla N,M < 5 oraz N, M > 5.
+Firma która posiada już około 10 kucharzy i dostawców nie zyskuje znacząco na wydajności po zatrudnieniu nowych pracowników.

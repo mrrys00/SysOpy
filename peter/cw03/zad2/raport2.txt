@@ -1,0 +1,103 @@
+Wszystkie czasy są podane w tyknięciach zegara.
+Duży plik - około 50000 linii
+Średni plik - około 3000 linii
+Mały plik - około 10 linii
+
+Mergowanie za pomocą wielu procesów, pomimo dodatkowych obciążeń związanych z tworzeniem procesów,
+okazało się niemal czterokrotnie szybsze. Prawdopodobnie wynika to z faktu, iż osobne procesy były
+w stanie wykorzystać wszystkie rdzenie procesora, podczas gdy pojedyńczy proces posiadający jeden
+wątek wykorzystuje jednynie jeden rdzeń.
+
+POMIARY:
+------------------------------------------------- MAŁA LICZBA PAR ----------------------------------------
+Czas zmergowania 4 par dużych plików w jednym procesie:
+    User: 26
+    System: 24
+    Real: 231
+
+Czas zmergowania 4 par dużych plików w osobnych procesach:
+    User: 0
+    System: 0
+    Real: 81
+
+Czas zmergowania 4 par średnich plików w jednym procesie:
+    User: 0
+    System: 1
+    Real: 8
+
+Czas zmergowania 4 par średnich plików w osobnych procesach:
+    User: 0
+    System: 0
+    Real: 4
+
+Czas zmergowania 4 par małych plików w jednym procesie:
+    User: 0
+    System: 0
+    Real: 2
+
+Czas zmergowania 4 par małych plików w osobnych procesach:
+    User: 0
+    System: 0
+    Real: 1
+
+------------------------------------------------- ŚREDNIA LICZBA PAR --------------------------------------
+Czas zmergowania 10 par dużych plików w jednym procesie:
+    User: 27
+    System: 77
+    Real: 461
+
+Czas zmergowania 10 par dużych plików w osobnych procesach:
+    User: 0
+    System: 0
+    Real: 149
+
+Czas zmergowania 10 par średnich plików w jednym procesie:
+    User: 0
+    System: 5
+    Real: 22
+
+Czas zmergowania 10 par średnich plików w osobnych procesach:
+    User: 0
+    System: 0
+    Real: 6
+
+Czas zmergowania 10 par małych plików w jednym procesie:
+    User: 1
+    System: 0
+    Real: 5
+
+Czas zmergowania 10 par małych plików w osobnych procesach:
+    User: 0
+    System: 0
+    Real: 2
+------------------------------------------------- DUŻA LICZBA PAR ----------------------------------------
+Czas zmergowania 20 par dużych plików w jednym procesie:
+    User: 65
+    System: 128
+    Real: 913
+
+Czas zmergowania 20 par dużych plików w osobnych procesach:
+    User: 0
+    System: 0
+    Real: 256
+
+Czas zmergowania 20 par średnich plików w jednym procesie:
+    User: 3
+    System: 3
+    Real: 37
+
+Czas zmergowania 20 par średnich plików w osobnych procesach:
+    User: 0
+    System: 0
+    Real: 10
+
+Czas zmergowania 20 par małych plików w jednym procesie:
+    User: 1
+    System: 0
+    Real: 12
+
+Czas zmergowania 20 par małych plików w osobnych procesach:
+    User: 0
+    System: 0
+    Real: 3
+

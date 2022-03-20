@@ -1,0 +1,90 @@
+Wszystkie czasy są podane w tyknięciach zegara.
+Duży plik - około 50000 linii
+Średni plik - około 3000 linii
+Mały plik - około 10 linii
+
+------------------------------------------------- MAŁA LICZBA PAR ----------------------------------------
+Czas zmergowania 4 par dużych plików:
+    User: 26
+    System: 24
+    Real: 231
+
+Czas zmergowania 4 par średnich plików:
+    User: 0
+    System: 1
+    Real: 8
+
+Czas zmergowania 4 par małych plików:
+    User: 0
+    System: 0
+    Real: 2
+
+------------------------------------------------- ŚREDNIA LICZBA PAR --------------------------------------
+Czas zmergowania 10 par dużych plików:
+    User: 27
+    System: 77
+    Real: 461
+
+Czas zmergowania 10 par średnich plików:
+    User: 0
+    System: 5
+    Real: 22
+
+Czas zmergowania 10 par małych plików:
+    User: 1
+    System: 0
+    Real: 5
+
+------------------------------------------------- DUŻA LICZBA PAR ----------------------------------------
+Czas zmergowania 20 par dużych plików:
+    User: 65
+    System: 128
+    Real: 913
+
+Czas zmergowania 20 par średnich plików:
+    User: 3
+    System: 3
+    Real: 37
+
+Czas zmergowania 20 par małych plików:
+    User: 1
+    System: 0
+    Real: 12
+
+------------------------------------------------- ZAPIS W PAMIĘCI ----------------------------------------
+Czas zapisania w pamięci pary dużych plików:
+    User: 2
+    System: 0
+    Real: 10
+
+Czas zapisania w pamięci pary średnich plików:
+    User: 0
+    System: 0
+    Real: 1
+
+Czas zapisania w pamięci pary małych plików:
+    User: 0
+    System: 0
+    Real: 0
+
+---------------------------------------------------- USUWANIE ----------------------------------------------
+Czas zapisania w pamięci pary dużych plików:
+    User: 0
+    System: 0
+    Real: 0
+
+Czas zapisania w pamięci pary średnich plików:
+    User: 0
+    System: 0
+    Real: 0
+
+Czas zapisania w pamięci pary małych plików:
+    User: 0
+    System: 0
+    Real: 0
+
+------------------------------------------------ DODAWANIE I USUWANIE ---------------------------------------
+Dodanie i usunięcie z pamięci pary dużych średnich i małych plików:
+    User: 3
+    System: 1
+    Real: 13

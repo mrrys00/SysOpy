@@ -1,0 +1,28 @@
+Wszystkie czasy są podane w tyknięciach zegara.
+Duży plik - około 50000 linii
+Średni plik - około 3000 linii
+Mały plik - około 10 linii
+
+Test polega na 
+    - zmergowaniu 3 par dużych, 3 par średnich, 3 par małych plików 
+    - usunięciu dużego, średniego i małego bloku 
+    - usunięciu wiersza z małego średniego i dużego bloku
+
+Wyniki czasowe:
+
+----------------------------BIBLIOTEKA STATYCZNA ---------------------------------
+User: 16
+System: 22
+Real: 183
+-----------------------------BIBLIOTEKA DZIELONA ---------------------------------
+User: 12
+System: 29
+Real: 183
+----------------------- BIBLIOTEKA ŁADOWANA DYNAMICZNIE --------------------------
+User: 15
+System: 24
+Real: 179
+
+Wnioski:
+Otrzmane wyniki są niemal identyczne niezależnie od wybranego sposobu dołączenia biblioteki.
+Oznacza to że z punktu widzenia wydajności czasowej programu metoda dołączania biblioteki nie ma większego znaczenia.
