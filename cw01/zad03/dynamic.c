@@ -6,9 +6,16 @@
 #include <string.h>
 #include <sys/times.h>
 #include <unistd.h>
+#include <dlfcn.h>
 
-#include "../zad01/counter.h"
 #define REPORT2 "report2.txt"
+
+char* SCREATETABLE = "create_table";
+char* SWCFILES = "wc_files";
+char* SCREATEBLOCK = "create_block";
+char* SREMOVEBLOCK = "remove_block";
+char* SCLEANALL = "clean_all";
+char* SOPERNAME = "all_operation_name";
 
 // https://www.ibm.com/docs/en/zos/2.3.0?topic=functions-times-get-process-child-process-times
 clock_t times(struct tms *buffer);
@@ -74,53 +81,84 @@ int is_clean_all(char* arg) {
 }
 
 int main(int argc, char ** args) {
+    void *library_handle = dlopen("./libcounter.so", RTLD_LAZY);
+
+    if (library_handle == NULL) {
+        printf("error openening library");
+        exit(1);
+    }
+
+    void ** (*create_table)(int);
+    void (*wc_files)(char *);
+    int (*create_block)(void **, int);
+    void (*remove_block)(void **, int);
+    void (*clean_all)(void **, int);
+    create_table = (void **(*)(int))dlsym(library_handle, "create_table");
+    wc_files = (void (*)(char *))dlsym(library_handle, "wc_files");
+    create_block = (int (*)(void **, int))dlsym(library_handle, "create_block");
+    remove_block = (void (*)(void **, int))dlsym(library_handle, "remove_block");
+    clean_all = (void (*)(void **, int))dlsym(library_handle, "clean_all");
+
+    if (dlerror()) {
+        printf("Cannot load dynlib\n");
+        exit(1);
+    }
+
     printf("argc %d\n", argc);
     void ** arr = NULL;
     int size = 0, used_size = 0;
-    char* all_operation_name = "";
+    char all_operation_name[50];
+    int every_log = 0;              // change flag to catch all times
 
     clock_t s1, fs1;
     struct tms s2, fs2;
 
-    start_time_measure(&fs1, &fs2);
     for (int i = 1; i < argc; i++) {
         if (i+1 < argc && is_create_table(args[i])) {     // create table
             i++;
             size = atoi(args[i]);
-            start_time_measure(&s1, &s2);
+            if (every_log) start_time_measure(&s1, &s2);
             arr = create_table(size);
-            finish_time_measure(s1, s2, SCREATETABLE);
+            if (every_log) finish_time_measure(s1, s2, SCREATETABLE);
             printf("table created\n");
         } else if (i+1 < argc && is_wc_lines(args[i])) {
             while (i+1 < argc && is_filename(args[i+1])) {
                 i++;
-                start_time_measure(&s1, &s2);
+                if (every_log) start_time_measure(&s1, &s2);
                 wc_files(args[i]);
-                finish_time_measure(s1, s2, SWCFILES);
+                if (every_log) finish_time_measure(s1, s2, SWCFILES);
                 printf("file %s saved to tmp file\n", args[i]);
             }
         } else if (i+1 < argc && is_create_block(args[i])) {
-            start_time_measure(&s1, &s2);
+            if (every_log) start_time_measure(&s1, &s2);
             size = create_block(arr, used_size);
-            finish_time_measure(s1, s2, SCREATEBLOCK);
+            if (every_log) finish_time_measure(s1, s2, SCREATEBLOCK);
             printf("block created\n");
         } else if (i+1 < argc && is_remove_block(args[i])) {
             i++;
-            start_time_measure(&s1, &s2);
+            if (every_log) start_time_measure(&s1, &s2);
             remove_block(arr, atoi(args[i]));
-            finish_time_measure(s1, s2, SREMOVEBLOCK);
+            if (every_log) finish_time_measure(s1, s2, SREMOVEBLOCK);
             printf("block %s removed\n", args[i]);
         } else if (is_clean_all(args[i])) {
-            start_time_measure(&s1, &s2);
+            if (every_log) start_time_measure(&s1, &s2);
             clean_all(arr, size);
-            finish_time_measure(s1, s2, SCLEANALL);
+            if (every_log) finish_time_measure(s1, s2, SCLEANALL);
             printf("all cleaned\n");
         } else if (i+1 < argc && strcmp(args[i], SOPERNAME) == 0) {
-            all_operation_name = args[i+1];
+            (void)strncpy(all_operation_name, args[i+1], sizeof(all_operation_name));
             printf("get operation name\n");
+        } else if (strcmp(args[i], "ts") == 0) {
+            start_time_measure(&fs1, &fs2);
+        } else if (strcmp(args[i], "tf") == 0) {
+            finish_time_measure(fs1, fs2, all_operation_name);
+        } else if (strcmp(args[i], "every_log") == 0) {
+            if (every_log == 0) every_log = 1;
+            else every_log = 0;
         }
-
     }
-    finish_time_measure(fs1, fs2, all_operation_name);
+    clean_all(arr, size);
+    dlclose(library_handle);
+
     return 0;
 }

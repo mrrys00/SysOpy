@@ -1,0 +1,22 @@
+=========== STATIC LIBRARY TEST ===========
+Operation 
+ execution times:
+User time: 0.000000
+System time: 0.000000
+Real time: 0.900000
+
+=========== SHARED LIBRARY TEST ===========
+Operation 
+ execution times:
+User time: 0.000000
+System time: 0.000000
+Real time: 0.860000
+
+=========== DYNAMIC LIBRARY TEST ===========
+Operation  execution times:
+User time: 0.000000
+System time: 0.000000
+Real time: 0.860000
+
+Komentarz:
+Wykorzystanie biblioteki statycznej okazało się najwolniejszą możliwą opcją.

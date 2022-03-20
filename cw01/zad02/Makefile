@@ -25,6 +25,8 @@ all:
 	$(OUTPUT) create_table 10 $(TIMESTART) wc_files big.txt big.txt big.txt big.txt big.txt big.txt big.txt big.txt big.txt big.txt all_operation_name 10big $(TIMEFINIS) $(TIMESTART) create_block all_operation_name create_block_10big $(TIMEFINIS) $(TIMESTART) remove_block 1 all_operation_name remove_block_10big $(TIMEFINIS)
 
 	$(OUTPUT) create_table 5 $(TIMESTART) create_block remove_block 1 create_block create_block remove_block 1 remove_block 2 create_block create_block create_block remove_block 1 remove_block 2 remove_block 3 all_operation_name create_remove_blocks $(TIMEFINIS)
+	mv "report2.txt" raport2.txt
+
 
 .PHONY: clean
 clean:

@@ -1,0 +1,44 @@
+=========== STATIC LIBRARY TEST O  ===========
+Operation 
+ execution times:
+User time: 0.000000
+System time: 0.000000
+Real time: 0.860000
+
+=========== STATIC LIBRARY TEST O0 ===========
+Operation 
+ execution times:
+User time: 0.000000
+System time: 0.000000
+Real time: 0.870000
+
+=========== STATIC LIBRARY TEST O1 ===========
+Operation 
+ execution times:
+User time: 0.000000
+System time: 0.000000
+Real time: 0.870000
+
+=========== STATIC LIBRARY TEST O2 ===========
+Operation 
+ execution times:
+User time: 0.000000
+System time: 0.000000
+Real time: 0.850000
+
+=========== STATIC LIBRARY TEST O3 ===========
+Operation 
+ execution times:
+User time: 0.000000
+System time: 0.000000
+Real time: 0.870000
+
+=========== STATIC LIBRARY TEST Os ===========
+Operation 
+ execution times:
+User time: 0.000000
+System time: 0.000000
+Real time: 0.880000
+
+Komentarz:
+Optymalizacja O2 zgodnie z przewidywaniami okazała się najwydajniejsza.

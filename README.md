@@ -75,3 +75,18 @@ Przy kompilacji kodu źródłowego należy włączyć w kompilatorze opcję -Wal
 
 Wysyłając zadanie należy koniecznie w komentarzu napisać, które zadania z zestawu zostały zrealizowane (działają) i wysłane. Jeśli zestaw jest kompletny, również należy to napisać. Brak opisu albo niezgodność ze stanem faktycznym skutkuje niezaliczeniem zestawu.
 Zestaw niekompletny uzupełniony w terminie późniejszym jest traktowany jako zestaw przysłany z opóźnieniem.
+
+
+# Notatki Lab01
+- bloki pamięci na plik tymczasowy
+- funkcja `system()` np polecenie `wc`
+
+* można przekierować basha do pliku
+
+- zadanie 1 - sama biblioteka
+    - jedno wywołanie wc = jeden blok
+- zadanie 2 - program który z tego ma korzystać
+
+# Notatki Lab02
+zadanie 2 można wypisać na wyjście - nie trzeba do pliku
+czasy można zmierzyć jakkolwiek
