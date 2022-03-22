@@ -1,10 +1,10 @@
 GCCF = gcc -Wall -ggdb
-OUTPUT = ./zad1
+OUTPUT = ./zad1s
 OUTFILE = ./big_new.txt
 
 build:
-	$(GCCF) -c zad1.c
-	$(GCCF) zad1.o -o $(OUTPUT)
+	$(GCCF) -c zad1s.c
+	$(GCCF) zad1s.o -o $(OUTPUT)
 
 .PHONY: all
 all:
