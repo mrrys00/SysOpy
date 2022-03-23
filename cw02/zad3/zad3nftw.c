@@ -8,6 +8,8 @@
 #include <unistd.h>
 #include <ftw.h>
 #include <stdint.h>
+#include <string.h>
+
 #define _XOPEN_SOURCE 500
 
 struct FTW {
@@ -17,15 +19,15 @@ struct FTW {
 
 static int display_info(const char *fpath, const struct stat *sb, int tflag, struct FTW *ftwbuf) {
     char command[4096];
-    sprintf(command, "[ -p \"%s\" ] && echo \"\" || err", fpath);
+    sprintf(command, "%d", tflag);
     printf("%-3s %2d %7jd   %-40s %d %s\n",
            (tflag == FTW_D) ?   "dir" :
            (tflag == FTW_DNR) ? "dnr" :
            (tflag == FTW_SL) ?  "sym-link" :
-           (system(command) == 0) ? "pipe" :
+//           (system(command) == 0) ? "pipe" :
            (tflag == FTW_F) ?   "file" :
            (tflag == FTW_NS) ?  "ns" :
-           "???",
+           command,
            ftwbuf->level, (intmax_t) sb->st_size, fpath, ftwbuf->base, fpath + ftwbuf->base);
     return 0;           /* To tell nftw() to continue */
 }
@@ -36,7 +38,6 @@ int main(int argc, char * argv[]) {
 //        printf("no directory selected\n");
 //        exit(1);
 //    }
-
     int flags = 1|2|4|8;
 
 //    if (argc > 2 && strchr(argv[2], 'd') != NULL)
