@@ -55,20 +55,20 @@ int main(int argc, char *args[]) {
      }
 
     start_time_measure(&fs1, &fs2);
-    int fp1 = open(fn1, O_RDONLY);
-    if (fp1 == -1) {
+    FILE *fp1 = fopen(fn1, "r");
+    if (fp1 == NULL) {
         printf("cannot open source file\n");
         exit(1);
     }
-    int fp2 = open(fn2, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR);
-    if (fp2 == -1) {
+    FILE *fp2 = fopen(fn2, "w");
+    if (fp2 == NULL) {
         printf("cannot open destination file\n");
         exit(1);
     }
     int cnt = 0, max_line_len = 1500, qualified_to_copy = 0, offset = 0;
     char block[max_line_len];
 
-    while ((cnt = read(fp1, block, max_line_len)) > 0) {
+    while ((cnt = fread(block, 1, max_line_len, fp1)) > 0) {
         int i = 0, char_n_l_i = -1; // -1 = no new line
 
         while (i < cnt && char_n_l_i == -1) {
@@ -91,19 +91,19 @@ int main(int argc, char *args[]) {
         if (char_n_l_i != -1) {
             if (qualified_to_copy) {
                 char *new_buffer = calloc(sizeof(char), char_n_l_i + offset +1);
-                lseek(fp1, -cnt - offset, SEEK_CUR);
-                read(fp1, new_buffer, char_n_l_i + offset + 1);
-                write(fp2, new_buffer, char_n_l_i + offset + 1);
+                fseek(fp1, -cnt - offset, SEEK_CUR);
+                fread(new_buffer, 1, char_n_l_i + offset + 1, fp1);
+                fwrite(new_buffer, 1, char_n_l_i + offset + 1, fp2);
                 free(new_buffer);
             } else {
-                lseek(fp1, -cnt + char_n_l_i + 1, SEEK_CUR);
+                fseek(fp1, -cnt + char_n_l_i + 1, SEEK_CUR);
             }
             offset = 0; qualified_to_copy = 0;
         }
     }
-    close(fp1);
-    close(fp2);
-    finish_time_measure(fs1, fs2, "System");
+    fclose(fp1);
+    fclose(fp2);
+    finish_time_measure(fs1, fs2, "Library");
 
     return 0;
 }
