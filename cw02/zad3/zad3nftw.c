@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <linux/limits.h>
 
 int block_devs = 0;
 int char_devs = 0;
@@ -54,12 +55,21 @@ static int display_info(const char *fpath, const struct stat *sb, int tflag, str
 
 int main(int argc, char * argv[]) {
     int flags = 1|2|4|8;
+    char relative_path[PATH_MAX];
 
-    if (nftw((argc < 2) ? "." : argv[1], display_info, 20, flags) == -1) {
+    if (argc < 2) {
+        strcpy(relative_path, ".");
+    } else {
+        strcpy(relative_path, argv[1]);
+    }
+    char *absolute_path = realpath(relative_path, NULL);
+
+    if (nftw(absolute_path, display_info, 20, flags) == -1) {
         perror("nftw");
         exit(EXIT_FAILURE);
     }
 
+    free(absolute_path);
     printf("block_devs %d, char_devs %d, dirs %d, pipes %d, sym_links %d, files %d, sockets %d", block_devs, char_devs, dirs, pipes, sym_links, files, sockets);
     exit(EXIT_SUCCESS);
 }

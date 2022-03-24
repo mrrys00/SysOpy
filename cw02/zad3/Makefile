@@ -1,17 +1,24 @@
 GCCF = gcc -Wall -ggdb
-OUTPUT = ./zad3
-PATH1 = "/home/mrrys00/Studia/4.Semestr/Systemy Operacyjne/SysOpy/cw02"
+OUTPUTN = ./zad3nftw
+OUTPUTD = ./zad3dir
+PATH1 = "."
 PATH2 = "/dev/input"
 
-build:
+build_nftw:
 	$(GCCF) -c zad3nftw.c
-	$(GCCF) zad3nftw.o -o $(OUTPUT)
+	$(GCCF) zad3nftw.o -o $(OUTPUTN)
+
+build_dir:
+	$(GCCF) -c zad3dir.c
+	$(GCCF) zad3dir.o -o $(OUTPUTD)
 
 .PHONY: all
 all:
-	make build
-	$(OUTPUT) $(PATH2)
+	make build_nftw
+	$(OUTPUTN) $(PATH2)
+	make build_dir
+	$(OUTPUTD) $(PATH2)
 
 .PHONY: clean
 clean:
-	rm -f *.o $(OUTPUT)
+	rm -f *.o $(OUTPUTN) $(OUTPUTD)
