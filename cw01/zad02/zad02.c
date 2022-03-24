@@ -7,9 +7,6 @@
 #include <sys/times.h>
 #include <unistd.h>
 
-#include "../zad01/counter.h"
-#define REPORT2 "report2.txt"
-
 // https://www.ibm.com/docs/en/zos/2.3.0?topic=functions-times-get-process-child-process-times
 clock_t times(struct tms *buffer);
 

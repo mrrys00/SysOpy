@@ -1,53 +1,65 @@
 //
 // Created by mrrys00 on 3/20/22.
 //
+#define _XOPEN_SOURCE 500
+#include <ftw.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/times.h>
-#include <unistd.h>
-#include <ftw.h>
-#include <stdint.h>
-#include <string.h>
+#include <sys/stat.h>
 
-#define _XOPEN_SOURCE 500
-
-struct FTW {
-    int base;
-    int level;
-};
+int block_devs = 0;
+int char_devs = 0;
+int dirs = 0;
+int pipes = 0;
+int sym_links = 0;
+int files = 0;
+int sockets = 0;
 
 static int display_info(const char *fpath, const struct stat *sb, int tflag, struct FTW *ftwbuf) {
-    char command[4096];
-    sprintf(command, "%d", tflag);
-    printf("%-3s %2d %7jd   %-40s %d %s\n",
-           (tflag == FTW_D) ?   "dir" :
-           (tflag == FTW_DNR) ? "dnr" :
-           (tflag == FTW_SL) ?  "sym-link" :
-//           (system(command) == 0) ? "pipe" :
-           (tflag == FTW_F) ?   "file" :
-           (tflag == FTW_NS) ?  "ns" :
-           command,
-           ftwbuf->level, (intmax_t) sb->st_size, fpath, ftwbuf->base, fpath + ftwbuf->base);
-    return 0;           /* To tell nftw() to continue */
+    char file_type[16] = {0};
+    switch (sb->st_mode & S_IFMT) {
+        case S_IFBLK:
+            strcat(file_type, "block dev");
+            block_devs++;
+            break;
+        case S_IFCHR:
+            strcat(file_type, "char dev");
+            char_devs++;
+            break;
+        case S_IFDIR:
+            strcat(file_type, "dir");
+            dirs++;
+            break;
+        case S_IFIFO:
+            strcat(file_type, "pipe");
+            pipes++;
+            break;
+        case S_IFLNK:
+            strcat(file_type, "sym-link");
+            sym_links++;
+            break;
+        case S_IFREG:
+            strcat(file_type, "file");
+            files++;
+            break;
+        case S_IFSOCK:
+            strcat(file_type, "socket");
+            sockets++;
+            break;
+    }
+    printf("Ścieżka:\t%s\nDowiązania:\t%ld\nRodzaj:\t%s\nRozmiar:\t%ld\nOstatni dostęp:\t%ld\nOstatnia modyfikacja:\t%ld\n", fpath, sb->st_nlink, file_type, sb->st_size, sb->st_atime, sb->st_mtime);
+    return 0;
 }
 
 int main(int argc, char * argv[]) {
-//    int nftw_status = -1;
-//    if (argc < 2) {
-//        printf("no directory selected\n");
-//        exit(1);
-//    }
     int flags = 1|2|4|8;
-
-//    if (argc > 2 && strchr(argv[2], 'd') != NULL)
-//        flags |= FTW_DEPTH;
-//    if (argc > 2 && strchr(argv[2], 'p') != NULL)
-//        flags |= FTW_PHYS;
 
     if (nftw((argc < 2) ? "." : argv[1], display_info, 20, flags) == -1) {
         perror("nftw");
         exit(EXIT_FAILURE);
     }
+
+    printf("block_devs %d, char_devs %d, dirs %d, pipes %d, sym_links %d, files %d, sockets %d", block_devs, char_devs, dirs, pipes, sym_links, files, sockets);
     exit(EXIT_SUCCESS);
 }

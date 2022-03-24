@@ -1,0 +1,14 @@
+characters in file: 45056
+line with character: 30720
+Operation System execution times:
+User time: 0.000000
+System time: 0.010000
+Real time: 0.020000
+
+characters in file: 45056
+line with character: 30720
+Operation Library execution times:
+User time: 0.000000
+System time: 0.000000
+Real time: 0.010000
+
