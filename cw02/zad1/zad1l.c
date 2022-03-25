@@ -71,9 +71,10 @@ int main(int argc, char *args[]) {
     while ((cnt = fread(block, 1, max_line_len, fp1)) > 0) {
         int i = 0, char_n_l_i = -1;
 
-        while (i < cnt && char_n_l_i == -1) {
+        while (i < cnt) {
             if (block[i] == '\n') {
                 char_n_l_i = i;
+                break;
             } else if (isspace((int) block[i]) == 0) {
                 qualified_to_copy = 1;
             }

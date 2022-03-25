@@ -1,10 +1,10 @@
 Operation System execution times:
-User time: 0.010000
-System time: 0.080000
-Real time: 0.100000
+User time: 0.020000
+System time: 0.220000
+Real time: 0.250000
 
 Operation Library execution times:
-User time: 0.010000
-System time: 0.000000
-Real time: 0.030000
+User time: 0.020000
+System time: 0.010000
+Real time: 0.040000
 
