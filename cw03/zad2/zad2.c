@@ -115,9 +115,6 @@ int main(int argc, char *argv[]) {
     double prec = strtod(argv[1], NULL);
     int n = atoi(argv[2]);
 
-    // double prec = 0.001;
-    // int n = 10;
-
     clock_t fs1;
     struct tms fs2;
 
