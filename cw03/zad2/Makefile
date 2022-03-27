@@ -1,24 +1,44 @@
-GCCF = gcc -Wall -ggdb
-OUTPUTN = ./zad3nftw
-OUTPUTD = ./zad3dir
-PATH1 = "."
-PATH2 = "/dev/input"
+GCCF = gcc -Wall -ggdb -O0
+OUTPUT = ./zad2
+REPORT = report.txt
 
-build_nftw:
-	$(GCCF) -c zad3nftw.c
-	$(GCCF) zad3nftw.o -o $(OUTPUTN)
+build:
+	$(GCCF) -c zad2.c
+	$(GCCF) zad2.o -o $(OUTPUT)
 
-build_dir:
-	$(GCCF) -c zad3dir.c
-	$(GCCF) zad3dir.o -o $(OUTPUTD)
+run:
+	echo "##################### Riemman Integration report #####################" > $(REPORT)
+	$(OUTPUT) 0.1 16		>> $(REPORT)
+	$(OUTPUT) 0.1 128		>> $(REPORT)
+	$(OUTPUT) 0.1 1024		>> $(REPORT)
+	$(OUTPUT) 0.1 8192		>> $(REPORT)
+
+	$(OUTPUT) 0.01 16		>> $(REPORT)
+	$(OUTPUT) 0.01 128		>> $(REPORT)
+	$(OUTPUT) 0.01 1024		>> $(REPORT)
+	$(OUTPUT) 0.01 8192		>> $(REPORT)
+
+	$(OUTPUT) 0.001 16		>> $(REPORT)
+	$(OUTPUT) 0.001 128		>> $(REPORT)
+	$(OUTPUT) 0.001 1024	>> $(REPORT)
+	$(OUTPUT) 0.001 8192	>> $(REPORT)
+
+	$(OUTPUT) 0.0001 16		>> $(REPORT)
+	$(OUTPUT) 0.0001 128	>> $(REPORT)
+	$(OUTPUT) 0.0001 1024	>> $(REPORT)
+	$(OUTPUT) 0.0001 8192	>> $(REPORT)
+
+	$(OUTPUT) 0.00001 16	>> $(REPORT)
+	$(OUTPUT) 0.00001 128	>> $(REPORT)
+	$(OUTPUT) 0.00001 1024	>> $(REPORT)
+	$(OUTPUT) 0.00001 8192	>> $(REPORT)
 
 .PHONY: all
 all:
-	make build_nftw
-	$(OUTPUTN) $(PATH2)
-	make build_dir
-	$(OUTPUTD) $(PATH2)
+	make build
+	# $(OUTPUT) 0.001 10
+	make run
 
 .PHONY: clean
 clean:
-	rm -f *.o $(OUTPUTN) $(OUTPUTD)
+	rm -f *.o $(OUTPUT)

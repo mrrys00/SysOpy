@@ -1,4 +1,4 @@
-GCCF = gcc -Wall -ggdb
+GCCF = gcc -Wall -ggdb -O0
 OUTPUT = ./zad1
 
 build:
