@@ -1,24 +1,16 @@
-GCCF = gcc -Wall -ggdb
-OUTPUTN = ./zad3nftw
-OUTPUTD = ./zad3dir
-PATH1 = "."
-PATH2 = "/dev/input"
+GCCF = gcc -Wall -Wint-to-pointer-cast -ggdb -O0
+OUTPUT = ./zad3
+ARGS = . expression 3
 
-build_nftw:
-	$(GCCF) -c zad3nftw.c
-	$(GCCF) zad3nftw.o -o $(OUTPUTN)
-
-build_dir:
-	$(GCCF) -c zad3dir.c
-	$(GCCF) zad3dir.o -o $(OUTPUTD)
+build:
+	$(GCCF) -c zad3.c
+	$(GCCF) zad3.o -o $(OUTPUT)
 
 .PHONY: all
 all:
-	make build_nftw
-	$(OUTPUTN) $(PATH2)
-	make build_dir
-	$(OUTPUTD) $(PATH2)
+	make build
+	$(OUTPUT) $(ARGS)
 
 .PHONY: clean
 clean:
-	rm -f *.o $(OUTPUTN) $(OUTPUTD)
+	rm -f *.o $(OUTPUT)
