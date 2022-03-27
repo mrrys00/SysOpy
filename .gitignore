@@ -53,3 +53,7 @@ dkms.conf
 
 # my files
 *.temp
+
+# IDEA
+.idea/
+.vscode
