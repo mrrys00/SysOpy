@@ -108,15 +108,15 @@ void integration(int n, double prec) {
 
 
 int main(int argc, char *argv[]) {
-    // if (argc < 3) {
-        // exit(EXIT_FAILURE);
-    // } 
-// 
-    // double prec = strtod(argv[1], NULL);
-    // int n = atoi(argv[2]);
+    if (argc < 3) {
+        exit(EXIT_FAILURE);
+    } 
 
-    double prec = 0.001;
-    int n = 10;
+    double prec = strtod(argv[1], NULL);
+    int n = atoi(argv[2]);
+
+    // double prec = 0.001;
+    // int n = 10;
 
     clock_t fs1;
     struct tms fs2;
