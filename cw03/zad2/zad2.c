@@ -52,11 +52,11 @@ void integration(int n, double prec) {
     int i = 0;
 
     while (i < n) {
-        double s = (to_ - from_) * i / n, e;
-        if (i == n - 1)
+        double s = (to_-from_)*i/n, e;
+        if (i == n-1)
             e = to_;
         else 
-            e = (to_ - from_) * (i + 1) / n;
+            e = (to_-from_)*(i+1)/n;
 
         pid_t pid = fork();
         if (pid == 0) {
@@ -66,6 +66,7 @@ void integration(int n, double prec) {
             // https://stackoverflow.com/questions/7430248/creating-a-new-directory-in-c
             struct stat st = {0};
             if (stat(WORKDIR, &st) == -1) mkdir(WORKDIR, 0777);
+
             sprintf(res_path, "%sw%d.txt", WORKDIR, i);
             sprintf(res_, "%lf\n", res);
 
@@ -78,11 +79,7 @@ void integration(int n, double prec) {
         i++;
     }
 
-    i = 0;
-    while (i < n) {
-        wait(NULL);
-        i++;
-    }
+    while(wait(NULL) > 0);
 
     i = 0;
     while (i < n) {
@@ -109,6 +106,7 @@ void integration(int n, double prec) {
 
 int main(int argc, char *argv[]) {
     if (argc < 3) {
+        printf("No arguments");
         exit(EXIT_FAILURE);
     } 
 

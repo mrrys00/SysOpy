@@ -87,6 +87,7 @@ void search_expression(char *path_dir, char *expressin, int depth, char *start_l
 
 int main(int argc, char * argv[]) {
     if (argc < 4) {
+        printf("No arguments");
         exit(EXIT_FAILURE);
     } 
 

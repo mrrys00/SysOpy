@@ -7,18 +7,16 @@
 #include <stdlib.h>
 
 int main(int argc, char *args[]) {
-    int n;
-    if (argc >= 2) {
-        n = atoi(args[1]);
-    } else if (argc < 2) {
-        printf("hey user, where is argument? try again …");
+    if (argc < 2) {
+        printf("No arguments");
         exit(EXIT_FAILURE);
     }
+    int n = atoi(args[1]);
 
     while(n > 0) {
         pid_t new_process_id = fork();
         if (new_process_id == 0) {
-            printf("Notification %d\n", getpid());
+            printf("Notification: pid = %d\n", getpid());
             break;
         }
         n--;

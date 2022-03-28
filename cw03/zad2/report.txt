@@ -8,32 +8,32 @@ Real time: 0.000000
 Result for n: 128 and precision: 0.000100 = 3.13658300000000034302161111554597
 Operation integration execution times:
 User time: 0.000000
-System time: 0.010000
-Real time: 0.020000
+System time: 0.000000
+Real time: 0.010000
 
 Result for n: 1024 and precision: 0.000100 = 2.89536599999999788579430060053710
 Operation integration execution times:
 User time: 0.000000
-System time: 0.080000
+System time: 0.070000
 Real time: 0.080000
 
 Result for n: 8192 and precision: 0.000100 = 2.57363699999999573364561911148485
 Operation integration execution times:
 User time: 0.010000
-System time: 0.610000
-Real time: 0.640000
+System time: 0.600000
+Real time: 0.620000
 
 Result for n: 16384 and precision: 0.000100 = 0.00000000000000000000000000000000
 Operation integration execution times:
-User time: 0.020000
-System time: 1.380000
-Real time: 1.470000
+User time: 0.010000
+System time: 1.320000
+Real time: 1.340000
 
 Result for n: 16 and precision: 0.000010 = 3.14133899999999988139620654692408
 Operation integration execution times:
 User time: 0.000000
 System time: 0.000000
-Real time: 0.000000
+Real time: 0.010000
 
 Result for n: 128 and precision: 0.000010 = 3.14059299999999952390794533130247
 Operation integration execution times:
@@ -44,168 +44,198 @@ Real time: 0.010000
 Result for n: 1024 and precision: 0.000010 = 3.12049400000000032306957109540235
 Operation integration execution times:
 User time: 0.000000
-System time: 0.090000
-Real time: 0.120000
+System time: 0.070000
+Real time: 0.080000
 
 Result for n: 8192 and precision: 0.000010 = 3.08833599999999952601115182915237
 Operation integration execution times:
 User time: 0.010000
-System time: 0.850000
-Real time: 0.990000
+System time: 0.640000
+Real time: 0.660000
 
 Result for n: 16384 and precision: 0.000010 = 3.08837500000002096456341860175598
 Operation integration execution times:
-User time: 0.020000
-System time: 1.670000
-Real time: 1.920000
+User time: 0.010000
+System time: 1.390000
+Real time: 1.470000
 
 Result for n: 16 and precision: 0.000001 = 3.14155700000000015492673810513224
 Operation integration execution times:
 User time: 0.000000
 System time: 0.000000
-Real time: 0.010000
+Real time: 0.000000
 
 Result for n: 128 and precision: 0.000001 = 3.14138999999999946055595501093194
 Operation integration execution times:
 User time: 0.000000
 System time: 0.010000
-Real time: 0.020000
+Real time: 0.010000
 
 Result for n: 1024 and precision: 0.000001 = 3.13979800000000253135112870950252
 Operation integration execution times:
 User time: 0.000000
-System time: 0.100000
-Real time: 0.110000
+System time: 0.070000
+Real time: 0.090000
 
 Result for n: 8192 and precision: 0.000001 = 3.13979799999999675819140065868851
 Operation integration execution times:
 User time: 0.010000
-System time: 0.770000
-Real time: 0.850000
+System time: 0.700000
+Real time: 0.720000
 
 Result for n: 16384 and precision: 0.000001 = 3.13984199999997271035567791841459
 Operation integration execution times:
-User time: 0.030000
-System time: 1.700000
-Real time: 1.910000
+User time: 0.010000
+System time: 1.460000
+Real time: 1.480000
 
 Result for n: 16 and precision: 0.000000 = 3.14158800000000004715161594504025
 Operation integration execution times:
 User time: 0.000000
 System time: 0.000000
-Real time: 0.030000
+Real time: 0.010000
 
 Result for n: 128 and precision: 0.000000 = 3.14157499999999956230567477177829
 Operation integration execution times:
 User time: 0.000000
-System time: 0.010000
-Real time: 0.040000
+System time: 0.000000
+Real time: 0.010000
 
 Result for n: 1024 and precision: 0.000000 = 3.14140300000000260993715528456960
 Operation integration execution times:
 User time: 0.000000
-System time: 0.100000
-Real time: 0.170000
+System time: 0.080000
+Real time: 0.090000
 
 Result for n: 8192 and precision: 0.000000 = 3.13979799999999675819140065868851
 Operation integration execution times:
 User time: 0.010000
-System time: 0.890000
-Real time: 1.070000
+System time: 0.660000
+Real time: 0.690000
 
 Result for n: 16384 and precision: 0.000000 = 3.13984199999997271035567791841459
 Operation integration execution times:
-User time: 0.020000
-System time: 1.490000
-Real time: 1.640000
+User time: 0.040000
+System time: 1.290000
+Real time: 1.380000
 
 Result for n: 16 and precision: 0.000000 = 3.14159300000000030195224098861217
 Operation integration execution times:
 User time: 0.000000
 System time: 0.000000
-Real time: 0.180000
+Real time: 0.040000
 
 Result for n: 128 and precision: 0.000000 = 3.14158999999999899443992035230622
 Operation integration execution times:
 User time: 0.000000
 System time: 0.010000
-Real time: 0.170000
+Real time: 0.040000
 
 Result for n: 1024 and precision: 0.000000 = 3.14159500000000013741896509600338
 Operation integration execution times:
 User time: 0.000000
-System time: 0.100000
-Real time: 0.280000
+System time: 0.090000
+Real time: 0.100000
 
 Result for n: 8192 and precision: 0.000000 = 3.14155499999999854310317459749058
 Operation integration execution times:
 User time: 0.010000
-System time: 0.960000
-Real time: 1.060000
+System time: 0.660000
+Real time: 0.670000
 
 Result for n: 16384 and precision: 0.000000 = 3.14133899999997101559756629285403
 Operation integration execution times:
-User time: 0.020000
-System time: 1.490000
-Real time: 1.650000
+User time: 0.010000
+System time: 1.350000
+Real time: 1.370000
 
 Result for n: 16 and precision: 0.000000 = 3.14159300000000030195224098861217
 Operation integration execution times:
 User time: 0.000000
 System time: 0.000000
-Real time: 1.450000
+Real time: 0.310000
 
 Result for n: 128 and precision: 0.000000 = 3.14159199999999838581743460963480
 Operation integration execution times:
 User time: 0.000000
 System time: 0.010000
-Real time: 1.330000
+Real time: 0.280000
 
 Result for n: 1024 and precision: 0.000000 = 3.14159800000000055675286603218410
 Operation integration execution times:
 User time: 0.000000
-System time: 0.110000
-Real time: 1.460000
+System time: 0.070000
+Real time: 0.310000
 
 Result for n: 8192 and precision: 0.000000 = 3.14155499999999854310317459749058
 Operation integration execution times:
-User time: 0.010000
-System time: 1.210000
-Real time: 2.400000
+User time: 0.000000
+System time: 0.670000
+Real time: 0.730000
 
 Result for n: 16384 and precision: 0.000000 = 3.14158899999997043295252296957187
 Operation integration execution times:
-User time: 0.030000
-System time: 2.800000
-Real time: 4.070000
+User time: 0.020000
+System time: 1.300000
+Real time: 1.370000
 
 Result for n: 16 and precision: 0.000000 = 3.14159300000000030195224098861217
 Operation integration execution times:
 User time: 0.000000
 System time: 0.000000
-Real time: 13.190000
+Real time: 2.740000
 
 Result for n: 128 and precision: 0.000000 = 3.14159199999999838581743460963480
 Operation integration execution times:
 User time: 0.000000
 System time: 0.010000
-Real time: 13.060000
+Real time: 2.650000
 
 Result for n: 1024 and precision: 0.000000 = 3.14159999999999950404117043945007
 Operation integration execution times:
 User time: 0.000000
-System time: 0.170000
-Real time: 12.900000
+System time: 0.070000
+Real time: 2.660000
 
 Result for n: 8192 and precision: 0.000000 = 3.14156199999999952154894344857894
 Operation integration execution times:
 User time: 0.010000
-System time: 0.970000
-Real time: 14.400000
+System time: 0.550000
+Real time: 3.090000
 
 Result for n: 16384 and precision: 0.000000 = 3.14159499999997038344190514180809
 Operation integration execution times:
-User time: 0.020000
-System time: 2.280000
-Real time: 15.390000
+User time: 0.030000
+System time: 1.290000
+Real time: 3.710000
+
+Result for n: 16 and precision: 0.000000 = 3.14159300000000030195224098861217
+Operation integration execution times:
+User time: 0.000000
+System time: 0.000000
+Real time: 27.790000
+
+Result for n: 128 and precision: 0.000000 = 3.14159199999999838581743460963480
+Operation integration execution times:
+User time: 0.000000
+System time: 0.010000
+Real time: 26.680000
+
+Result for n: 1024 and precision: 0.000000 = 3.14159999999999950404117043945007
+Operation integration execution times:
+User time: 0.000000
+System time: 0.110000
+Real time: 25.940000
+
+Result for n: 8192 and precision: 0.000000 = 3.14156199999999952154894344857894
+Operation integration execution times:
+User time: 0.010000
+System time: 0.580000
+Real time: 26.330000
+
+Result for n: 16384 and precision: 0.000000 = 3.14159699999997066299783909926191
+Operation integration execution times:
+User time: 0.030000
+System time: 1.240000
+Real time: 27.120000
 
