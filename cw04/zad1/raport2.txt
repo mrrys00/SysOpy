@@ -1,0 +1,28 @@
+make test_exec
+./zad1exec ignore
+Child process
+./zad1exec mask
+Child process
+./zad1exec pending
+Child process
+Signal delivered to child
+make test_fork
+./zad1fork ignore
+./zad1fork handler
+Signal recieved 10
+Signal recieved 10
+Signal recieved 10
+./zad1fork mask
+./zad1fork pending
+Signal not delivered to child
+
+
+++++++ WNIOSKI ++++++
+
+W przypadku użycia fork dziedziczone są:
+    - ignore
+    - handler
+    - mask
+natomiast pending signal nie jest dziedziczone.
+
+W przypadku użycia exec wszystko jest dziedziczone.
