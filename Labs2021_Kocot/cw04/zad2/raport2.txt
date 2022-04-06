@@ -1,9 +1,0 @@
-test1:
-    Flaga SA_SIGINFO dziala - program uzyskuje dodatkowe informacje, w tym PID prcesu ktory sygnal wyslal
-    Flaga SA_RESETHAND dziala - ponowne wyslanie sygnalu wywoluje juz domyslny handler
-
-test2:
-    Flaga SA_ONSTACK dziala - mimo przeladowania stosu przez funkcje rec(), customowa funkcja wywoluje sie.
-
-test3:
-    Brak flagi SA_ONSTACK sprawia, ze przeladowanie stosu uniemozliwia wykonanie jakiegokolwiek handlera.
