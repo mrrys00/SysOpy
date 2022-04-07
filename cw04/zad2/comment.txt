@@ -1,0 +1,16 @@
+./zad2 0
+SIGINFO | NODEFER - handle
+Signal: #2 ; sig_num: 2 ; raised by pid: 28825
+Signal: #2 ; sig_num: 2 ; raised by pid: 28825
+Dzięki ustawieniu tych flag jesteśmy w stanie obsłużyć następny SIGINT po przechwyceniu pierwszego SIGINTa oraz wypisać informacje z funkcji.
+
+./zad2 1
+ONSTACK - Stack overflow - Aborted
+Stack overflow
+make[1]: [Makefile:16: tests] Aborted (core dumped) (ignored)
+Mimo przeładowania stosu zadana funkcja wykonuje się dzięki zadanej fladze.
+
+./zad2 2
+ONSTACK - Stack owerflow - Segmentation fault
+make[1]: [Makefile:17: tests] Segmentation fault (core dumped) (ignored)
+Brak flagi jest równoznaczny z niewykonaniem się funkcji po przeładowaniu stosu
