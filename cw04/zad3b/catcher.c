@@ -6,49 +6,49 @@
 
 char *mode;
 
-void kill_sender(pid_t sender_proc_pid, int to_send_signals)
+void kill_sender(pid_t sender_proc_pid, int signal)
 {
-    for (int i = 0; i < to_send_signals; ++i)
-        kill(sender_proc_pid, SIGUSR1);
-    kill(sender_proc_pid, SIGUSR2);
+    kill(sender_proc_pid, signal);
     return;
 }
 
-void sigqueue_sender(pid_t sender_proc_pid, int to_send_signals)
+void sigqueue_sender(pid_t sender_proc_pid, int signal, int signal_count)
 {
-    union sigval sig_val;
-    for (int i = 0; i < to_send_signals; ++i)
-    {
-        sig_val.sival_int = i;
-        sigqueue(sender_proc_pid, SIGUSR1, sig_val);
-    }
-    sigqueue(sender_proc_pid, SIGUSR2, sig_val);
+    union sigval empty;
+    empty.sival_int = signal_count;
+    sigqueue(sender_proc_pid, signal, empty);
     return;
 }
 
-void sigrt_sender(pid_t sender_proc_pid, int to_send_signals)
+void sigrt_sender(pid_t sender_proc_pid, int signal)
 {
-    for (int i = 0; i < to_send_signals; ++i)
-        kill(sender_proc_pid, SIGRTMIN);
-    kill(sender_proc_pid, SIGRTMIN + 1);
+    kill(sender_proc_pid, signal);
     return;
 }
 
 void signal_handler(int signal_number, siginfo_t *info, void *ucontext)
 {
-    static int sig_cnt = 0;
+    static int signal_count = 0;
+    pid_t sender_pid = info->si_pid;
     if (signal_number == SIGUSR1 || signal_number == SIGRTMIN)
-        ++sig_cnt;
+    {
+        ++signal_count;
+        if (strcmp("KILL", mode) == 0)
+            kill_sender(sender_pid, SIGUSR1);
+        else if (strcmp("SIGQUEUE", mode) == 0)
+            sigqueue_sender(sender_pid, SIGUSR1, signal_count);
+        else if (strcmp("SIGRT", mode) == 0)
+            sigrt_sender(sender_pid, SIGRTMIN);
+    }
     else if (signal_number == SIGUSR2 || signal_number == SIGRTMIN + 1)
     {
-        pid_t sender_pid = info->si_pid;
         if (strcmp("KILL", mode) == 0)
-            kill_sender(sender_pid, sig_cnt);
+            kill_sender(sender_pid, SIGUSR2);
         else if (strcmp("SIGQUEUE", mode) == 0)
-            sigqueue_sender(sender_pid, sig_cnt);
+            sigqueue_sender(sender_pid, SIGUSR2, signal_count);
         else if (strcmp("SIGRT", mode) == 0)
-            sigrt_sender(sender_pid, sig_cnt);
-        printf("Received %d signals\n", sig_cnt);
+            sigrt_sender(sender_pid, SIGRTMIN + 1);
+        printf("Received %d signals\n", signal_count);
         exit(0);
     }
 }

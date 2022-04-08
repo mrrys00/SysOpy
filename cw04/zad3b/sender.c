@@ -6,32 +6,36 @@
 
 int all_sig_cnt = 0;
 
-void kill_sender(pid_t catch_proc_pid, int to_send_signals)
+void kill_sender(pid_t catch_proc_pid, int to_send_signals, sigset_t *mask)
 {
-    for (int i = 0; i < to_send_signals; ++i)
-        kill(catch_proc_pid, SIGUSR1);
-    kill(catch_proc_pid, SIGUSR2);
-    return;
-}
-
-void sigqueue_sender(pid_t catch_proc_pid, int to_send_signals)
-{
-    union sigval sig_val;
     for (int i = 0; i < to_send_signals; ++i)
     {
-        sig_val.sival_int = i;
-        sigqueue(catch_proc_pid, SIGUSR1, sig_val);
+        kill(catch_proc_pid, SIGUSR1);
+        sigsuspend(mask);
     }
-    sigqueue(catch_proc_pid, SIGUSR2, sig_val);
-    return;
+    kill(catch_proc_pid, SIGUSR2);
 }
 
-void sigrt_sender(pid_t catch_proc_pid, int to_send_signals)
+void sigqueue_sender(pid_t catch_proc_pid, int to_send_signals, sigset_t *mask)
+{
+    union sigval empty;
+    for (int i = 0; i < to_send_signals; ++i)
+    {
+        empty.sival_int = i;
+        sigqueue(catch_proc_pid, SIGUSR1, empty);
+        sigsuspend(mask);
+    }
+    sigqueue(catch_proc_pid, SIGUSR2, empty);
+}
+
+void sigrt_sender(pid_t catch_proc_pid, int to_send_signals, sigset_t *mask)
 {
     for (int i = 0; i < to_send_signals; ++i)
+    {
         kill(catch_proc_pid, SIGRTMIN);
+        sigsuspend(mask);
+    }
     kill(catch_proc_pid, SIGRTMIN + 1);
-    return;
 }
 
 void mask_signals(sigset_t *newmask)
@@ -77,14 +81,14 @@ void prepare_sender(sigset_t *mask, struct sigaction *handler_struct, int to_sen
     return;
 }
 
-int send_option(pid_t catch_proc_pid, int to_send_signals, char *mode)
+int send_option(pid_t catch_proc_pid, int to_send_signals, char *mode, sigset_t *mask)
 {
     if (strcmp(mode, "KILL") == 0)
-        kill_sender(catch_proc_pid, to_send_signals);
+        kill_sender(catch_proc_pid, to_send_signals, mask);
     else if (strcmp(mode, "SIGQUEUE") == 0)
-        sigqueue_sender(catch_proc_pid, to_send_signals);
+        sigqueue_sender(catch_proc_pid, to_send_signals, mask);
     else if (strcmp(mode, "SIGRT") == 0)
-        sigrt_sender(catch_proc_pid, to_send_signals);
+        sigrt_sender(catch_proc_pid, to_send_signals, mask);
     else
         return EXIT_FAILURE;
 
@@ -97,7 +101,7 @@ int sender(pid_t catch_proc_pid, int to_send_signals, char *mode)
     struct sigaction handler_struct;
 
     prepare_sender(&mask, &handler_struct, to_send_signals);
-    if (send_option(catch_proc_pid, to_send_signals, mode))
+    if (send_option(catch_proc_pid, to_send_signals, mode, &mask))
         return EXIT_FAILURE;
     while (1)
         sigsuspend(&mask);
