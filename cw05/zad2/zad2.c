@@ -51,13 +51,14 @@ int display_emails(int sort_by)
     while (fgets(buf, _SC_LINE_MAX, stream_mail) != NULL)
     {
         if (sort_by == 0)       // sort by date
-        {
-
-
-        }
+            printf("%s", buf);
         else                    // sort by from
         {
-
+            if (idx != 0)
+            {
+                mail_struct new_mail;
+                char *from = get_from(buf)
+            }
         }
     }
     // ...

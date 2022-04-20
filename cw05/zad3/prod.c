@@ -8,6 +8,7 @@
 
 #define READ "r"
 #define WRITE "w"
+#define MAXBUF 262144
 
 int main(int argc, char *args[])
 {
@@ -25,7 +26,7 @@ int main(int argc, char *args[])
         exit(EXIT_FAILURE);
 
     int read_cnt;
-    char buf[_SC_LINE_MAX], products[_SC_LINE_MAX];
+    char buf[MAXBUF], products[MAXBUF];
     while ((read_cnt = fread(buf, sizeof(char), to_read_cnt, fp)) != 0)
     {
         sleep(rand() % 2 + 1);
@@ -35,6 +36,4 @@ int main(int argc, char *args[])
         fflush(pipe_ptr);
     }
     fclose(pipe_ptr);
-
-    exit(EXIT_SUCCESS);
 }

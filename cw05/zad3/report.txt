@@ -1,0 +1,40 @@
+OK file: ./temp/file1.txt, lnum: 1
+OK file: ./temp/file2.txt, lnum: 2
+OK file: ./temp/file3.txt, lnum: 3
+prod: 3	cons: 1	N: 10
+OK file: ./temp/file1.txt, lnum: 1
+prod: 1	cons: 3	N: 10
+OK file: ./temp/file1.txt, lnum: 1
+OK file: ./temp/file2.txt, lnum: 2
+OK file: ./temp/file3.txt, lnum: 3
+prod: 3	cons: 3	N: 10
+OK file: ./temp/file1.txt, lnum: 1
+OK file: ./temp/file2.txt, lnum: 2
+OK file: ./temp/file3.txt, lnum: 3
+prod: 3	cons: 1	N: 100
+OK file: ./temp/file1.txt, lnum: 1
+prod: 1	cons: 3	N: 100
+OK file: ./temp/file1.txt, lnum: 1
+OK file: ./temp/file2.txt, lnum: 2
+OK file: ./temp/file3.txt, lnum: 3
+prod: 3	cons: 3	N: 100
+OK file: ./temp/file1.txt, lnum: 1
+OK file: ./temp/file2.txt, lnum: 2
+OK file: ./temp/file3.txt, lnum: 3
+prod: 3	cons: 1	N: 1000
+OK file: ./temp/file1.txt, lnum: 1
+prod: 1	cons: 3	N: 1000
+OK file: ./temp/file1.txt, lnum: 1
+OK file: ./temp/file2.txt, lnum: 2
+OK file: ./temp/file3.txt, lnum: 3
+prod: 3	cons: 3	N: 1000
+OK file: ./temp/file3.txt, lnum: 3
+OK file: ./temp/file2.txt, lnum: 2
+OK file: ./temp/file1.txt, lnum: 1
+prod: 3	cons: 1	N: 4097
+OK file: ./temp/file1.txt, lnum: 1
+prod: 1	cons: 3	N: 4097
+OK file: ./temp/file2.txt, lnum: 2
+OK file: ./temp/file3.txt, lnum: 3
+OK file: ./temp/file1.txt, lnum: 1
+prod: 3	cons: 3	N: 4097

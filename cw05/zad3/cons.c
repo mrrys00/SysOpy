@@ -7,6 +7,7 @@
 
 #define READ "r"
 #define FILELINES 128
+#define MAXBUF 262144
 
 int main(int argc, char *args[])
 {
@@ -20,21 +21,20 @@ int main(int argc, char *args[])
     if (fifo == NULL)
         exit(EXIT_FAILURE);
 
-    char *lin_arr[FILELINES], buf[_SC_LINE_MAX];
+    char *lin_arr[FILELINES], buf[MAXBUF];
     for (int i = 0; i < FILELINES; i++)
     {
-        lin_arr[i] = calloc(_SC_LINE_MAX, sizeof(char));
+        lin_arr[i] = calloc(MAXBUF, sizeof(char));
         lin_arr[i][0] = '\0';
     }
-
     
-    while (fgets(buf, _SC_LINE_MAX, fifo) != NULL)
+    while (fgets(buf, MAXBUF, fifo) != NULL)
     {
         for (int i = 0; i < FILELINES; i++)
             lin_arr[i][0] = '\0';
             
         int idx_last = 0;
-        char line[_SC_LINE_MAX];
+        char line[MAXBUF];
         strcpy(line, strchr(buf, ' ') + 1);
         int ln = atoi(strtok(buf, " "));
         line[strlen(line) - 1] = '\0';
@@ -46,7 +46,7 @@ int main(int argc, char *args[])
             perror("locking file error");
 
         int read_cnt;
-        while ((read_cnt = read(fd, buf, _SC_LINE_MAX)) > 0)
+        while ((read_cnt = read(fd, buf, MAXBUF)) > 0)
         {
             int offs = strlen(lin_arr[idx_last]);
             for (int i = 0; i < read_cnt; i++)
@@ -77,6 +77,5 @@ int main(int argc, char *args[])
             perror("error: lock release");
         close(fd);
     }
-
-    exit(EXIT_SUCCESS);
+    // fclose(fifo);
 }

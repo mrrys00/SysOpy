@@ -7,6 +7,7 @@ PROD = ./prod
 CHECK = ./check
 OUTCONSUMER = out_cons.txt
 TEMP = ./temp/
+REPORT = "report.txt"
 
 RUNARGS = 4 1 10 $(TEMP)"producer%d_read.txt"
 
@@ -35,21 +36,28 @@ build_all:
 
 .PHONY: test_all
 test_all:
-	$(OUTPUT) 5 1 10 	$(TEMP)"file%d_read.txt"         	# 5 producers, 1 consumer, N = 10
-	$(OUTPUT) 1 3 10 	$(TEMP)"file%d_read.txt"         	# 1 producer, 3 consumers, N = 10
-	$(OUTPUT) 5 3 10 	$(TEMP)"file%d_read.txt"         	# 5 producers, 3 consumers, N = 10
-	$(OUTPUT) 5 1 20 	$(TEMP)"file%d_read.txt"         	# 5 producers, 1 consumer, N = 20
-	$(OUTPUT) 1 3 20 	$(TEMP)"file%d_read.txt"         	# 1 producer, 3 consumers, N = 20
-	$(OUTPUT) 5 3 20 	$(TEMP)"file%d_read.txt"         	# 5 producers, 3 consumers, N = 20
-	$(OUTPUT) 5 1 4500 	$(TEMP)"file%d_read_large.txt" 		# 5 producers, 1 consumer, N = 4500
-	$(OUTPUT) 1 3 4500 	$(TEMP)"file%d_read_large.txt" 		# 1 producer, 3 consumers, N = 4500
-	$(OUTPUT) 5 3 4500 	$(TEMP)"file%d_read_large.txt" 		# 5 producers, 3 consumers, N = 4500
+	$(OUTPUT) 3 1 10 	$(TEMP)"file%d.txt"		 >  $(REPORT)
+	$(OUTPUT) 1 3 10 	$(TEMP)"file%d.txt"		 >> $(REPORT)
+	$(OUTPUT) 3 3 10 	$(TEMP)"file%d.txt"		 >> $(REPORT)
+	$(OUTPUT) 3 1 100 	$(TEMP)"file%d.txt"		 >> $(REPORT)
+	$(OUTPUT) 1 3 100 	$(TEMP)"file%d.txt"		 >> $(REPORT)
+	$(OUTPUT) 3 3 100 	$(TEMP)"file%d.txt"		 >> $(REPORT)
+	$(OUTPUT) 3 1 1000 	$(TEMP)"file%d.txt"		 >> $(REPORT)
+	$(OUTPUT) 1 3 1000 	$(TEMP)"file%d.txt"		 >> $(REPORT)
+	$(OUTPUT) 3 3 1000 	$(TEMP)"file%d.txt"		 >> $(REPORT)
+	$(OUTPUT) 3 1 4097 	$(TEMP)"file%d.txt"		 >> $(REPORT)
+	$(OUTPUT) 1 3 4097 	$(TEMP)"file%d.txt"		 >> $(REPORT)
+	$(OUTPUT) 3 3 4097 	$(TEMP)"file%d.txt"		 >> $(REPORT)
 
 .PHONY: all
 all:
 	make build_all
 	make test_all
 
+.PHONY: test
+test:
+	make all
+
 .PHONY: clean
 clean:
-	rm *.o $(OUTPUT).o $(CONS).o $(PROD).o $(CHECK).o $(OUTPUT) $(CONS) $(PROD) $(CHECK) $(OUTCONSUMER)
+	rm *.o $(OUTPUT).o $(CONS).o $(PROD).o $(CHECK).o $(OUTPUT) $(CONS) $(PROD) $(CHECK) $(OUTCONSUMER) fifo

@@ -21,12 +21,16 @@ int main(int argc, char *args[])
         exit(EXIT_FAILURE);
     }
 
-    if (mkfifo(PFIFO, S_IFIFO | S_IRUSR | S_IWUSR) != 0)
+    int mk = mkfifo(PFIFO, S_IFIFO | S_IRUSR | S_IWUSR);
+    if (mk != 0)
+    {
+        printf("err %d\n", mk);
         exit(EXIT_FAILURE);
+    }
 
     printf("prod: %d\tcons: %d\tN: %d\n", atoi(args[1]), atoi(args[2]), atoi(args[3]));
 
-    for (int i = 0; i < atoi(args[1]); ++i)     // execute producers
+    for (int i = 0; i < atoi(args[1]); i++)     // execute producers
         if (fork() == 0)
         {
             char _id[16], rfp[128];
@@ -36,13 +40,13 @@ int main(int argc, char *args[])
         }
 
     remove(OUTCONSUMER);
-    for (int i = 0; i < atoi(args[2]); ++i)     // execute consumers
+    for (int i = 0; i < atoi(args[2]); i++)     // execute consumers
         if (fork() == 0)
             execl(CONSUMER, CONSUMER, PFIFO, args[3], OUTCONSUMER, NULL);
     while (wait(NULL) > 0)
         ;
 
-    for (int i = 0; i < atoi(args[1]); ++i)     // execute checks
+    for (int i = 0; i < atoi(args[1]); i++)     // execute checks
     {
         if (fork() == 0)
         {

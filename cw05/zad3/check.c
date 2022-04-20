@@ -4,6 +4,7 @@
 #include <string.h>
 
 #define READ "r"
+#define MAXBUF 262144
 
 int main(int argc, char *args[])
 {
@@ -17,12 +18,12 @@ int main(int argc, char *args[])
         exit(EXIT_FAILURE);
 
     int ln = atoi(args[3]), lid = 0;
-    char line[_SC_LINE_MAX], buf[_SC_LINE_MAX];
-    fgets(line, _SC_LINE_MAX, _if);
+    char line[MAXBUF], buf[MAXBUF];
+    fgets(line, MAXBUF, _if);
     
     while (lid != ln)
     {
-        fgets(buf, _SC_LINE_MAX, _of);
+        fgets(buf, MAXBUF, _of);
         lid++;
     }
 

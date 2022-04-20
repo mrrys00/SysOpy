@@ -38,8 +38,10 @@ void exec_test(int type)
         if (set_mask(&new_mask, &old_mask) < 0)
             perror("Cannot block signal\n");
 
-        if (type == 2) ctype = "2";
-        else ctype = "3";
+        if (type == 2)
+            ctype = "2";
+        else
+            ctype = "3";
     }
     raise(SIGUSR1);
     execl("zad1test", "zad1test", ctype, NULL);
