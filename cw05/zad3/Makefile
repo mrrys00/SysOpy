@@ -45,9 +45,9 @@ test_all:
 	$(OUTPUT) 3 1 1000 	$(TEMP)"file%d.txt"		 >> $(REPORT)
 	$(OUTPUT) 1 3 1000 	$(TEMP)"file%d.txt"		 >> $(REPORT)
 	$(OUTPUT) 3 3 1000 	$(TEMP)"file%d.txt"		 >> $(REPORT)
-	$(OUTPUT) 3 1 4097 	$(TEMP)"file%d.txt"		 >> $(REPORT)
-	$(OUTPUT) 1 3 4097 	$(TEMP)"file%d.txt"		 >> $(REPORT)
-	$(OUTPUT) 3 3 4097 	$(TEMP)"file%d.txt"		 >> $(REPORT)
+	$(OUTPUT) 3 1 1225100 	$(TEMP)"file%d.txt"		 >> $(REPORT)
+	$(OUTPUT) 1 3 1225100 	$(TEMP)"file%d.txt"		 >> $(REPORT)
+	$(OUTPUT) 3 3 1225100 	$(TEMP)"file%d.txt"		 >> $(REPORT)
 
 .PHONY: all
 all:

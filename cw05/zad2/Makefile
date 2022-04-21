@@ -2,11 +2,13 @@ MAKEFLAGS += --no-print-directory
 
 GCCF = gcc -Wall -ggdb -O0
 OUTPUT = ./zad2
-COMMAN = commands
 
 DATE = "data"
 SENDER = "nadawca"
 
+EMAIL = "ala@ma.kota"
+TITLE = "AlaMaKota"
+BODY = "ALA niema Kota"
 
 .PHONY: prepare
 prepare:
@@ -20,7 +22,9 @@ build:
 .PHONY: all
 all:
 	$(MAKE) build
-	$(OUTPUT) $(COMMAN)
+	$(OUTPUT) $(EMAIL) $(TITLE) $(BODY)
+	$(OUTPUT) $(DATE)
+	$(OUTPUT) $(SENDER)
 
 .PHONY: clean
 clean:
