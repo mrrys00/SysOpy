@@ -1,11 +1,11 @@
 #include <stdlib.h>
 
 #define T_STOP 010L
-#define T_DISCONNECT 013L
+#define T_TOALL 013L
 #define T_LIST 016L
 #define T_CHAT 021L
 #define T_RELAY 024L
-#define T_CONNECT 027L
+#define T_TOONE 027L
 #define T_INIT 032L
 #define T_ERROR 035L
 #define KEYPATH getenv("HOME")
@@ -25,7 +25,7 @@
 
 typedef struct message_t {
     long mtype;
-    int  mint;
+    int  mto;
     int  mfrom;
     char mtext[MAXMESLEN];
 } message_t;

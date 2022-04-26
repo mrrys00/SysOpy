@@ -27,16 +27,16 @@ int findempty(int* client_queue) {  // find next empty client room
     return -1;
 }
 
-int sendint(int msqid, long type, int mint) {
+int sendint(int msqid, long type, int mto) {
     mes_out.mtype = type;
-    mes_out.mint = mint;
+    mes_out.mto = mto;
     mes_out.mfrom = -1;
     return msgsnd(msqid, &mes_out, sizeof(mes_out), 0);
 }
 
-int sendpacket(int msqid, long type, int mint, char* mtext) {
+int sendpacket(int msqid, long type, int mto, char* mtext) {
     mes_out.mtype = type;
-    mes_out.mint = mint;
+    mes_out.mto = mto;
     mes_out.mfrom = -1;
     strcpy(mes_out.mtext, mtext);
     return msgsnd(msqid, &mes_out, sizeof(mes_out), 0);
@@ -71,8 +71,8 @@ int main(int argc, char * argv[]) {
             case T_INIT:
                 client_id = findempty(client_queue);
                 printf("INIT - Assigning ID = %d\n", client_id);
-                keys[client_id] = mes.mint;
-                client_queue[client_id] = msgget(mes.mint, 0666);
+                keys[client_id] = mes.mto;
+                client_queue[client_id] = msgget(mes.mto, 0666);
                 partner[client_id] = -1;  // set as non-talking
                 sendint(client_queue[client_id], T_INIT, client_id);
                 client_id++;
@@ -101,7 +101,7 @@ int main(int argc, char * argv[]) {
                 break;
             case T_CONNECT:
                 p1 = mes.mfrom;
-                p2 = mes.mint;
+                p2 = mes.mto;
                 if(partner[p1] != -1) {
                    sendint(client_queue[p1], T_ERROR, ERR_BUSY);
                 } else if(p1 == p2) {

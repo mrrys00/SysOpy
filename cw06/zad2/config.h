@@ -26,7 +26,7 @@
 
 typedef struct message_t {
     long mtype;
-    int  mint;
+    int  mto;
     int  mfrom;
     char mtext[MAXMESLEN];
 } message_t;

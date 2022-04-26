@@ -36,24 +36,24 @@ int parse(char* line) {
     return C_NOCOMMAND;
 }
 
-int sendint(int msqid, long type, int mint) {
+int sendint(int msqid, long type, int mto) {
     msgbuf mes;
     mes.mtype = type;
-    mes.mint = mint;
+    mes.mto = mto;
     mes.mfrom = client_id;
     return msgsnd(msqid, &mes, sizeof(mes), 0);
 }
 
-int sendpacket(int msqid, long type, int mint, char* mtext) {
+int sendpacket(int msqid, long type, int mto, char* mtext) {
     msgbuf mes;
     mes.mtype = type;
-    mes.mint = mint;
+    mes.mto = mto;
     mes.mfrom = client_id;
     strcpy(mes.mtext, mtext);
     return msgsnd(msqid, &mes, sizeof(mes), 0);
 }
 
-void stop(int signo) {
+void stopSigint(int signo) {
     if(pid != -1) kill(pid, SIGKILL);
     printf(" exiting...\n");
     sendint(server_queue, T_STOP, client_id);
@@ -75,7 +75,7 @@ int main(int argc, char * argv[]) {
 
     sendint(server_queue, T_INIT, key);
     msgrcv(client_queue, &mes, sizeof(mes), T_INIT, 0);
-    client_id = mes.mint;
+    client_id = mes.mto;
     printf("ClientID: %d\n", client_id);
 
 
@@ -97,14 +97,14 @@ int main(int argc, char * argv[]) {
         }
     }
     else {
-        signal(SIGINT, stop);
+        signal(SIGINT, stopSigint);
         while(true) {
             rec = msgrcv(client_queue, &mes, sizeof(mes), -1000, IPC_NOWAIT & 0);
             if(rec > 0) {
                 switch(mes.mtype) {
                     case T_CONNECT:
                         printf("connect\n");
-                        partnerQ = msgget(mes.mint, 0);
+                        partnerQ = msgget(mes.mto, 0);
                         break;
                     case T_CHAT:
                         printf(" chat> %s", mes.mtext);
@@ -114,24 +114,24 @@ int main(int argc, char * argv[]) {
                         partnerQ = -1;
                         break;
                     case T_RELAY:
-                        if(partnerQ != -1) sendpacket(partnerQ, T_CHAT, mes.mint, mes.mtext);
+                        if(partnerQ != -1) sendpacket(partnerQ, T_CHAT, mes.mto, mes.mtext);
                         break;
                     case T_LIST:
                         printf("\n%s\n", mes.mtext);
                         break;
                     case T_ERROR:
-                        if(mes.mint == ERR_SELF) {
+                        if(mes.mto == ERR_SELF) {
                             printf("ERR_SELF: Trying to talk with oneself\n");
-                        } else if(mes.mint == ERR_TAKEN) {
+                        } else if(mes.mto == ERR_TAKEN) {
                             printf("ERR_SELF: Chosen client is taken\n");
-                        } else if(mes.mint == ERR_BUSY) {
+                        } else if(mes.mto == ERR_BUSY) {
                             printf("ERR_BUSY: Another connection already established\n");
-                        } else if(mes.mint == ERR_NOTFOUND) {
+                        } else if(mes.mto == ERR_NOTFOUND) {
                             printf("ERR_NOTFOUND: Chosen client not found\n");
                         }
                         break;
                     case T_STOP:
-                        stop(SIGINT);
+                        stopSigint(SIGINT);
                 }
             }
         }

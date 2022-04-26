@@ -14,7 +14,7 @@
 
 #include "config.h"
 
-int quit = 1;
+int quit = 0;
 message_t mes = {0L, 0, 0, ""};
 message_t mes_out = {0L, 0, 0, ""};
 
@@ -34,18 +34,18 @@ int keytaken(int checked, int *client_queue, int *keys)
     return 0;
 }
 
-int sendint(int msqid, long type, int mint)
+int sendint(int msqid, long type, int mto)
 {
     mes_out.mtype = type;
-    mes_out.mint = mint;
+    mes_out.mto = mto;
     mes_out.mfrom = -1;
     return msgsnd(msqid, &mes_out, sizeof(mes_out), 0);
 }
 
-int sendpacket(int msqid, long type, int mint, char *mtext)
+int sendpacket(int msqid, long type, int mto, char *mtext)
 {
     mes_out.mtype = type;
-    mes_out.mint = mint;
+    mes_out.mto = mto;
     mes_out.mfrom = -1;
     strcpy(mes_out.mtext, mtext);
     return msgsnd(msqid, &mes_out, sizeof(mes_out), 0);
@@ -60,14 +60,14 @@ int main()
 {
     key_t key;
     int server_queue, client_id, tpos;
-    int p1, p2;
+    // int p1, p2;
     ssize_t rec;
 
     signal(SIGINT, stopserver);
 
     int client_queue[MAXCLINUM];
     // int partner[MAXCLINUM];
-    key_t keys[MAXCLINUM];
+    // key_t keys[MAXCLINUM];
     for (int i = 0; i < MAXCLINUM; i++)
     {
         client_queue[i] = -1;
@@ -86,8 +86,8 @@ int main()
             case T_INIT:
                 client_id = findempty(client_queue);
                 printf("INIT - Assigning ID = %d\n", client_id);
-                keys[client_id] = mes.mint;
-                client_queue[client_id] = msgget(mes.mint, 0666);
+                // keys[client_id] = mes.mto;
+                client_queue[client_id] = msgget(mes.mto, 0666);
                 // partner[client_id] = -1; // set as non-talking
                 sendint(client_queue[client_id], T_INIT, client_id);
                 client_id++;
@@ -96,7 +96,7 @@ int main()
                 printf("STOP - Client %d is exiting\n", mes.mfrom);
                 // if (partner[mes.mfrom] != -1)
                 // {
-                //     sendint(client_queue[partner[mes.mfrom]], T_DISCONNECT, 0);
+                //     sendint(client_queue[partner[mes.mfrom]], T_TOALL, 0);
                 //     partner[partner[mes.mfrom]] = -1;
                 // }
                 client_queue[mes.mfrom] = -1;
@@ -119,49 +119,52 @@ int main()
                 }
                 msgsnd(client_queue[mes.mfrom], &mes, sizeof(mes), MSG_NOERROR);
                 break;
-            case T_CONNECT:         // change to 2ALL
-                printf("CONNECT - Client %d tries to connect with client %d\n", mes.mfrom, mes.mint);
-                p1 = mes.mfrom;
-                p2 = mes.mint;
-                if (partner[p1] != -1)
-                {
-                    sendint(client_queue[p1], T_ERROR, ERR_BUSY);
-                }
-                else if (p1 == p2)
-                {
-                    sendint(client_queue[p1], T_ERROR, ERR_SELF);
-                }
-                else if (p2 >= MAXCLINUM || p2 < 0 || client_queue[p2] == -1)
-                {
-                    sendint(client_queue[p1], T_ERROR, ERR_NOTFOUND);
-                }
-                else if (partner[p2] != -1)
-                {
-                    sendint(client_queue[p1], T_ERROR, ERR_TAKEN);
-                }
-                else
-                {
-                    partner[p1] = p2;
-                    partner[p2] = p1;
-                    sendint(client_queue[p1], T_CONNECT, keys[p2]);
-                    sendint(client_queue[p2], T_CONNECT, keys[p1]);
-                }
+            case T_TOONE:         // change to 2ONE
+                printf("Sending message from client %d to client %d, text: %s\n", mes.mfrom, mes.mto, mes.mtext);
+                // sendint(client_queue[p1], T_TOONE, keys[p2]);
+                // sendint(client_queue[p2], T_TOONE, keys[p1]);
+
+                // p1 = mes.mfrom;
+                // p2 = mes.mto;
+                // if (partner[p1] != -1)
+                // {
+                //     sendint(client_queue[p1], T_ERROR, ERR_BUSY);
+                // }
+                // else if (p1 == p2)
+                // {
+                //     sendint(client_queue[p1], T_ERROR, ERR_SELF);
+                // }
+                // else if (p2 >= MAXCLINUM || p2 < 0 || client_queue[p2] == -1)
+                // {
+                //     sendint(client_queue[p1], T_ERROR, ERR_NOTFOUND);
+                // }
+                // else if (partner[p2] != -1)
+                // {
+                //     sendint(client_queue[p1], T_ERROR, ERR_TAKEN);
+                // }
+                // else
+                // {
+                //     partner[p1] = p2;
+                //     partner[p2] = p1;
+                //     sendint(client_queue[p1], T_TOONE, keys[p2]);
+                //     sendint(client_queue[p2], T_TOONE, keys[p1]);
+                // }
                 break;
-            case T_DISCONNECT:      // change to 2ONE
-                printf("DISCONNECT - Client %d tries to disconnect\n", mes.mfrom);
-                p1 = mes.mfrom;
-                p2 = partner[p1];
-                if (p2 == -1)
-                {
-                    sendint(client_queue[p1], T_ERROR, ERR_NOCONN);
-                }
-                else
-                {
-                    partner[p1] = -1;
-                    partner[p2] = -1;
-                    sendint(client_queue[p1], T_DISCONNECT, 0);
-                    sendint(client_queue[p2], T_DISCONNECT, 0);
-                }
+            case T_TOALL:      // change to 2ALL
+                printf("Client %d sending message to all clients, text: %s\n", mes.mfrom, mes.mtext);
+                // p1 = mes.mfrom;
+                // // p2 = partner[p1];
+                // if (p2 == -1)
+                // {
+                //     sendint(client_queue[p1], T_ERROR, ERR_NOCONN);
+                // }
+                // else
+                // {
+                //     // partner[p1] = -1;
+                //     // partner[p2] = -1;
+                //     sendint(client_queue[p1], T_TOALL, 0);
+                //     sendint(client_queue[p2], T_TOALL, 0);
+                // }
                 break;
             }
     }
