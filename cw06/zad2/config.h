@@ -14,7 +14,6 @@
 #define ERR_SELF -7  // client asks to talk with itself
 #define ERR_BUSY -8  // client who asks is busy
 #define ERR_NOTFOUND -9  // no such client
-#define ERR_NOCONN -10  // not connected
 #define ERR_KEYTAKEN -11  // another client logged on that key
 
 #define MAXMESLEN 256  // maximum length of messages

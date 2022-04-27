@@ -21,7 +21,7 @@
 #define C_BADNUM -4
 
 int client_queue, server_queue, client_id = -1, partnerQ = -1;
-bool quit = false;
+bool server_enabled = false;
 pid_t pid = -1;
 
 int parse(char* line) {

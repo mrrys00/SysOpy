@@ -14,11 +14,11 @@
 
 #include "config.h"
 
-bool quit = false;
+bool server_enabled = false;
 msgbuf mes = {0L, 0, 0, ""};
 msgbuf mes_out = {0L, 0, 0, ""};
 
-int findempty(int* client_queue) {  // find next empty client room
+int assign_id(int* client_queue) {  // find next empty client room
     for(int i=0; i<MAXCLINUM; i++) {
         if(client_queue[i] == -1) {
             return i;
@@ -42,8 +42,8 @@ int sendpacket(int msqid, long type, int mto, char* mtext) {
     return msgsnd(msqid, &mes_out, sizeof(mes_out), 0);
 }
 
-void stopserver(int signo) {
-    quit = true;
+void server_poweroff(int signo) {
+    server_enabled = true;
 }
 
 int main(int argc, char * argv[]) {
@@ -52,7 +52,7 @@ int main(int argc, char * argv[]) {
     int p1, p2;
     ssize_t rec;
 
-    signal(SIGINT, stopserver);
+    signal(SIGINT, server_poweroff);
 
     int client_queue[MAXCLINUM];
     int partner[MAXCLINUM];
@@ -65,11 +65,11 @@ int main(int argc, char * argv[]) {
 
     server_queue = msgget(key, 0666 | IPC_CREAT);
 
-    while(!quit) {
+    while(!server_enabled) {
         rec = msgrcv(server_queue, &mes, sizeof(mes), -1000, IPC_NOWAIT);
         if(rec > 0) switch(mes.mtype) {
             case T_INIT:
-                client_id = findempty(client_queue);
+                client_id = assign_id(client_queue);
                 printf("INIT - Assigning ID = %d\n", client_id);
                 keys[client_id] = mes.mto;
                 client_queue[client_id] = msgget(mes.mto, 0666);
@@ -127,19 +127,19 @@ int main(int argc, char * argv[]) {
                 break;
         }
     }
-    int running = 0;
+    int active_clients = 0;
     for(int i=0; i<MAXCLINUM; i++) {
         if(client_queue[i] != -1) {
             sendint(client_queue[i], T_STOP, 0);
-            running++;
+            active_clients++;
         }
     }
-    while(running > 0) {
+    while(active_clients > 0) {
         rec = msgrcv(server_queue, &mes, sizeof(mes), T_STOP, IPC_NOWAIT);
         if(rec > 0) {
             printf("STOP - Client %d is exiting\n", mes.mfrom);
             client_queue[mes.mfrom] = -1;
-            running--;
+            active_clients--;
         }
     }
     printf("All clients closed. Exiting...\n");

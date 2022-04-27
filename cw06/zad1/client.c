@@ -15,20 +15,12 @@
 #include <errno.h>
 
 #define MAXLINE 512
-#define C_NOCOMMAND -1
-#define C_DISCONNECT -2
-#define C_LIST -3
-#define C_BADNUM -4
-#define C_STOP -5
+#define C_NOSUCHCOMMAND -1
+#define C_NOTKNOWNARG -2
 
-#define LIST "LIST"
-#define TOALL "2ALL"
-#define TOONE "2ONE"
-#define STOP "STOP"
-
-int client_queue, server_queue, client_id = -1, partnerQ = -1;
+int client_queue, server_queue, client_id = -1;
 pid_t pid = -1;
-message_t mes = {0L, 0, 0, ""}, mes_out = {0L, 0, 0, ""};
+message_t in_message = {0L, 0, 0, 0, ""}, out_message = {0L, 0, 0, 0, ""};
 
 void str_cut(char *res, char *line, int begin, int len)
 {
@@ -37,23 +29,21 @@ void str_cut(char *res, char *line, int begin, int len)
         res[i-begin] = line[i];
 
     res[i-begin] = '\0';
-    printf("res: %s\n", res);
     return;
 }
 
 void str_cut_to_char(char *res, char *line, int begin, int len, char last)
 {
+    if (line[begin] == ' ') begin++;
     int i=begin;
     for (; i<begin+len; i++)
     {
-        // printf("%c\n",line[i]);
         if (line[i] == last)
             break;
         res[i-begin] = line[i];
     }
 
     res[i-begin] = '\0';
-    printf("res: %s\n", res);
     return;
 }
 
@@ -61,42 +51,24 @@ int handle(char *line)
 {
     char cmd[5];
     str_cut(cmd, line, 0, 4);
-    printf("cmd: %s\n", cmd);
-    if (strcmp(cmd, LIST) == 0)
-    {
-        return C_LIST;
-    }
-    else if (strcmp(cmd, TOALL) == 0)
-    {
+    if (strcmp(cmd, "LIST") == 0)
+        return T_LIST;
+    else if (strcmp(cmd, "2ALL") == 0)
         return T_TOALL;
-    }
-    else if (strcmp(cmd, TOONE) == 0)
-    {
+    else if (strcmp(cmd, "2ONE") == 0)
         return T_TOONE;
-    }
-    else if (strcmp(cmd, STOP) == 0)
-    {
-        return C_STOP;
-    }
-    return C_NOCOMMAND;
+    else if (strcmp(cmd, "STOP") == 0)
+        return T_STOP;
+    return C_NOSUCHCOMMAND;
 }
 
 int sendint(int msqid, long type, int mto, char *mtext)
 {
-    mes_out.mtype = type;
-    mes_out.mto = mto;
-    mes_out.mfrom = client_id;
-    strcpy(mes_out.mtext, mtext);
-    return msgsnd(msqid, &mes_out, sizeof(mes), 0);
-}
-
-int sendpacket(int msqid, long type, int mto, char *mtext)
-{
-    mes_out.mtype = type;
-    mes_out.mto = mto;
-    mes_out.mfrom = client_id;
-    strcpy(mes_out.mtext, mtext);
-    return msgsnd(msqid, &mes_out, sizeof(mes), 0);
+    out_message.mtype = type;
+    out_message.mto = mto;
+    out_message.mfrom = client_id;
+    strcpy(out_message.mtext, mtext);
+    return msgsnd(msqid, &out_message, sizeof(in_message), 0);
 }
 
 void stopSigint(int signo)
@@ -120,16 +92,16 @@ void stopTerminal()
 
 int main()
 {
-    key_t key = ftok(KEYPATH, CLIENTID), servkey= ftok(KEYPATH, SERVERID);
-    char inp[MAXLINE];
-    int comm, rec;
+    key_t key = ftok(KEYPATH, CLIENTID), server_key = ftok(KEYPATH, SERVERID);
+    char user_input[MAXLINE];
+    int command, recieved;
 
-    server_queue = msgget(servkey, 0);
-    client_queue = msgget(key, 0666 | IPC_CREAT);
+    server_queue = msgget(server_key, 0);
+    client_queue = msgget(key, 0777 | IPC_CREAT);
 
     sendint(server_queue, T_INIT, key, "");
-    msgrcv(client_queue, &mes, sizeof(mes), T_INIT, 0);
-    client_id = mes.mto;
+    msgrcv(client_queue, &in_message, sizeof(in_message), T_INIT, 0);
+    client_id = in_message.mto;
 
     printf("\nClientID: %d\n", client_id);
 
@@ -137,45 +109,38 @@ int main()
     {
         while (1)
         {
-            fgets(inp, MAXLINE, stdin);
-            comm = handle(inp);
-            printf("input: %s \tcmd: %d\n", inp, comm);
-            if (comm == C_BADNUM)
+            fgets(user_input, MAXLINE, stdin);
+            command = handle(user_input);
+            if (command == C_NOTKNOWNARG)
             {
-                printf("ERROR: Incorrect argument\n");
+                printf("ERROR: No such command\n");
             }
-            else if (comm == C_LIST)
+            else if (command == T_LIST)
             {
                 sendint(server_queue, T_LIST, 0, "");
             }
-            else if (comm == C_STOP)
+            else if (command == T_STOP)
             {   
                 stopTerminal();
                 if (pid != -1)
                     kill(pid, SIGKILL);
                 exit(EXIT_SUCCESS);
             }
-            else if (comm == T_TOALL)
+            else if (command == T_TOALL)
             {
                 char mtext[MAXLINE];
-                str_cut_to_char(mtext, inp, 5, MAXLINE, '\0');
+                str_cut_to_char(mtext, user_input, 5, MAXLINE, '\0');
                 sendint(server_queue, T_TOALL, -1, mtext);
             }
-            else if (comm == T_TOONE)
+            else if (command == T_TOONE)
             {
                 char client_to_str[MAXLINE], mtext[MAXLINE];
                 int client_to;
-                str_cut_to_char(client_to_str, inp, 5, 3, ' ');
+                str_cut_to_char(client_to_str, user_input, 5, 3, ' ');
                 client_to = atoi(client_to_str);
-                str_cut_to_char(mtext, inp, 5+strlen(client_to_str), MAXLINE, '\0');
-                printf("client_to: %s\tmtext: %s\n", client_to_str, mtext);
+                str_cut_to_char(mtext, user_input, 5+strlen(client_to_str), MAXLINE, '\0');
                 sendint(server_queue, T_TOONE, client_to, mtext);
             }
-            // else
-            // {
-            //     printf("packet send\n");
-            //     sendpacket(client_queue, T_RELAY, client_id, inp);
-            // }
         }
     }
     else        // reciving messages
@@ -183,51 +148,30 @@ int main()
         signal(SIGINT, stopSigint);
         while (1)
         {
-            rec = msgrcv(client_queue, &mes, sizeof(mes), -1000, IPC_NOWAIT & 0);
-            if (rec > 0)
+            recieved = msgrcv(client_queue, &in_message, sizeof(in_message), -1000, IPC_NOWAIT & 0);
+            if (recieved > 0)
             {
-                switch (mes.mtype)
+                switch (in_message.mtype)
                 {
-                // case T_TOONE:
-                //     printf("Connection established\n");
-                //     partnerQ = msgget(mes.mto, 0);
-                //     break;
-                case T_CHAT:
-                    printf("message> %s", mes.mtext);
+                case T_TOALL:
+                    printf("message from %d to ALL at %ld> %s", in_message.mfrom, in_message.mtime, in_message.mtext);
                     break;
-                // case T_TOALL:
-                //     printf("Disconnected\n");
-                //     partnerQ = -1;
-                //     break;
-                // case T_RELAY:
-                //     if (partnerQ != -1)
-                //         sendpacket(partnerQ, T_CHAT, mes.mto, mes.mtext);
-                //     break;
+
+                case T_TOONE:
+                    printf("message from %d to you at %ld> %s", in_message.mfrom, in_message.mtime, in_message.mtext);
+                    break;
+
                 case T_LIST:
-                    printf("\n%s\n", mes.mtext);
+                    printf("\n%s\n", in_message.mtext);
                     break;
+
                 case T_ERROR:
-                    if (mes.mto == ERR_SELF)
+                    if (in_message.mto == ERR_NOTFOUND)
                     {
-                        printf("ERR_SELF: Trying to talk with oneself\n");
+                        printf("WARNING: Client not found\n");
                     }
-                    // else if (mes.mto == ERR_TAKEN)
-                    // {
-                    //     printf("ERR_SELF: Chosen client is taken\n");
-                    // }
-                    // else if (mes.mto == ERR_BUSY)
-                    // {
-                    //     printf("ERR_BUSY: Another connection already established\n");
-                    // }
-                    else if (mes.mto == ERR_NOTFOUND)
-                    {
-                        printf("ERR_NOTFOUND: Chosen client not found\n");
-                    }
-                    // else if (mes.mto == ERR_NOCONN)
-                    // {
-                    //     printf("ERR_NOCONN: No connection established\n");
-                    // }
                     break;
+
                 case T_STOP:
                     stopSigint(SIGINT);
                 }
