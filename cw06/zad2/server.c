@@ -14,134 +14,135 @@
 
 #include "config.h"
 
-bool server_enabled = false;
-msgbuf mes = {0L, 0, 0, ""};
-msgbuf mes_out = {0L, 0, 0, ""};
+int server_enabled = 1;
+message_t in_message = {0L, 0, 0, 0, ""}, out_message = {0L, 0, 0, 0, ""};
 
-int assign_id(int* client_queue) {  // find next empty client room
-    for(int i=0; i<MAXCLINUM; i++) {
-        if(client_queue[i] == -1) {
+int assign_id(int *client_queue)
+{
+    for (int i = 0; i < MAXCLINUM; i++)
+        if (client_queue[i] == -1)
             return i;
-        }
-    }
     return -1;
 }
 
-int sendint(int msqid, long type, int mto) {
-    mes_out.mtype = type;
-    mes_out.mto = mto;
-    mes_out.mfrom = -1;
-    return msgsnd(msqid, &mes_out, sizeof(mes_out), 0);
+FILE *start_log()
+{
+    if (access(LOGNAME, F_OK) == 0)
+        return fopen(LOGNAME, "a");
+    return fopen(LOGNAME, "w");
 }
 
-int sendpacket(int msqid, long type, int mto, char* mtext) {
-    mes_out.mtype = type;
-    mes_out.mto = mto;
-    mes_out.mfrom = -1;
-    strcpy(mes_out.mtext, mtext);
-    return msgsnd(msqid, &mes_out, sizeof(mes_out), 0);
+void log_messages(message_t mess)
+{
+    FILE *fp = start_log();
+    char *log = (char*)malloc((MAXMESLEN + 64) * sizeof(char));
+    sprintf(log, "timestamp: %ld\tfrom: %d\tmessage: %s\n", mess.mtime, mess.mfrom, mess.mtext);
+    fwrite(log, 1, strlen(log), fp);
+    fclose(fp);
+    free(log);
+    return;
 }
 
-void server_poweroff(int signo) {
-    server_enabled = true;
+int sendint(int msqid, long type, int mto)
+{
+    out_message.mtype = type;
+    out_message.mto = mto;
+    out_message.mfrom = -1;
+    return msgsnd(msqid, &out_message, sizeof(out_message), 0);
 }
 
-int main(int argc, char * argv[]) {
-    key_t key;
-    int server_queue, client_id, tpos;
-    int p1, p2;
+void server_poweroff(int signo)
+{
+    server_enabled = 0;
+    return;
+}
+
+int main()
+{
+    key_t key = ftok(KEYPATH, SERVERID);
+    int server_queue = msgget(key, 0666 | IPC_CREAT), client_id, tpos, active_clients = 0;
     ssize_t rec;
+    int client_queue[MAXCLINUM];
+
 
     signal(SIGINT, server_poweroff);
 
-    int client_queue[MAXCLINUM];
-    int partner[MAXCLINUM];
-    key_t keys[MAXCLINUM];
-    for(int i=0; i<MAXCLINUM; i++) {
+    for (int i = 0; i < MAXCLINUM; i++)
+    {
         client_queue[i] = -1;
     }
 
-    key = ftok(HASHFILE, SERVID);
-
-    server_queue = msgget(key, 0666 | IPC_CREAT);
-
-    while(!server_enabled) {
-        rec = msgrcv(server_queue, &mes, sizeof(mes), -1000, IPC_NOWAIT);
-        if(rec > 0) switch(mes.mtype) {
+    while (server_enabled)
+    {
+        rec = msgrcv(server_queue, &in_message, sizeof(in_message), -1000, IPC_NOWAIT);
+        if (rec > 0)
+            switch (in_message.mtype)
+            {
             case T_INIT:
                 client_id = assign_id(client_queue);
                 printf("INIT - Assigning ID = %d\n", client_id);
-                keys[client_id] = mes.mto;
-                client_queue[client_id] = msgget(mes.mto, 0666);
-                partner[client_id] = -1;  // set as non-talking
+                client_queue[client_id] = msgget(in_message.mto, 0666);
                 sendint(client_queue[client_id], T_INIT, client_id);
                 client_id++;
                 break;
             case T_STOP:
-                printf("STOP - Client %d is exiting\n", mes.mfrom);
-                if(partner[mes.mfrom] != -1) {
-                    sendint(client_queue[partner[mes.mfrom]], T_DISCONNECT, 0);
-                    partner[partner[mes.mfrom]] = -1;
-                }
-                client_queue[mes.mfrom] = -1;
-                partner[mes.mfrom] = -1;
+                printf("STOP - Client %d is exiting\n", in_message.mfrom);
+                client_queue[in_message.mfrom] = -1;
                 break;
+
             case T_LIST:
-                printf("LIST - Client %d asks for a list\n", mes.mfrom);
-                mes.mtype = T_LIST;
+                printf("LIST - Client %d asks for a list\n", in_message.mfrom);
+                in_message.mtype = T_LIST;
                 tpos = 0;
-                for(int i=0; i<MAXCLINUM; i++) {
-                    if(client_queue[i] != -1) {
-                        tpos += sprintf(&mes.mtext[tpos], "\t%d -> ", i);
-                        if(partner[i] == -1) tpos += sprintf(&mes.mtext[tpos], "free\n");
-                        else tpos += sprintf(&mes.mtext[tpos], "talking\n");
-                    }
+                for (int i = 0; i < MAXCLINUM; i++)
+                    if (client_queue[i] != -1)
+                        tpos += sprintf(&in_message.mtext[tpos], "\t- %d is active now\n", i);
+                msgsnd(client_queue[in_message.mfrom], &in_message, sizeof(in_message), MSG_NOERROR);
+                break;
+
+            case T_TOONE:
+                printf("Trying to send message from client %d to client %d, text: %s\n", in_message.mfrom, in_message.mto, in_message.mtext);
+                if (in_message.mto < 0 || MAXCLINUM <= in_message.mto || client_queue[in_message.mto] == -1)
+                    sendint(client_queue[in_message.mfrom], T_ERROR, ERR_NOTFOUND);
+
+                in_message.mtime = time(NULL);
+                msgsnd(client_queue[in_message.mto], &in_message, sizeof(in_message), MSG_NOERROR);
+                log_messages(in_message);
+                break;
+
+            case T_TOALL:
+                printf("Client %d sending message to all clients, text: %s\n", in_message.mfrom, in_message.mtext);
+                in_message.mtime = time(NULL);
+                int i = 0;
+                while (1)
+                {
+                    if (client_queue[i] == -1) break;
+                    if (i != in_message.mfrom) msgsnd(client_queue[i], &in_message, sizeof(in_message), MSG_NOERROR);
+                    i++;
                 }
-                msgsnd(client_queue[mes.mfrom], &mes, sizeof(mes), MSG_NOERROR);
+                log_messages(in_message);
                 break;
-            case T_CONNECT:
-                p1 = mes.mfrom;
-                p2 = mes.mto;
-                if(partner[p1] != -1) {
-                   sendint(client_queue[p1], T_ERROR, ERR_BUSY);
-                } else if(p1 == p2) {
-                    sendint(client_queue[p1], T_ERROR, ERR_SELF);
-                } else if(p2 >= MAXCLINUM || p2 < 0 || client_queue[p2] == -1) {
-                    sendint(client_queue[p1], T_ERROR, ERR_NOTFOUND);
-                } else if(partner[p2] != -1) {
-                    sendint(client_queue[p1], T_ERROR, ERR_TAKEN);
-                } else {
-                    partner[p1] = p2;
-                    partner[p2] = p1;
-                    sendint(client_queue[p1], T_CONNECT, keys[p2]);
-                    sendint(client_queue[p2], T_CONNECT, keys[p1]);
-                }
-                break;
-            case T_DISCONNECT:
-                p1 = mes.mfrom;
-                p2 = partner[p1];
-                partner[p1] = -1;
-                partner[p2] = -1;
-                sendint(client_queue[p1], T_DISCONNECT, 0);
-                sendint(client_queue[p2], T_DISCONNECT, 0);
-                break;
-        }
+
+            }
     }
-    int active_clients = 0;
-    for(int i=0; i<MAXCLINUM; i++) {
-        if(client_queue[i] != -1) {
+    for (int i = 0; i < MAXCLINUM; i++)
+    {
+        if (client_queue[i] != -1)
+        {
             sendint(client_queue[i], T_STOP, 0);
             active_clients++;
         }
     }
-    while(active_clients > 0) {
-        rec = msgrcv(server_queue, &mes, sizeof(mes), T_STOP, IPC_NOWAIT);
-        if(rec > 0) {
-            printf("STOP - Client %d is exiting\n", mes.mfrom);
-            client_queue[mes.mfrom] = -1;
+    while (active_clients > 0)
+    {
+        rec = msgrcv(server_queue, &in_message, sizeof(in_message), T_STOP, IPC_NOWAIT);
+        if (rec > 0)
+        {
+            printf("STOP - Client %d is exiting\n", in_message.mfrom);
+            client_queue[in_message.mfrom] = -1;
             active_clients--;
         }
     }
-    printf("All clients closed. Exiting...\n");
     msgctl(server_queue, IPC_RMID, NULL);
+    printf("All clients closed. Exiting...\n");
 }
