@@ -3,6 +3,7 @@ MAKEFLAGS += --no-print-directory
 GCCF = gcc -Wall -ggdb -O0
 CLIENT = ./client
 SERVER = ./server
+LOGS = "logs.log"
 
 .PHONY: build_server
 build_server:
@@ -26,4 +27,4 @@ run_client:
 
 .PHONY: clean
 clean:
-	rm *.o $(CLIENT) $(SERVER)
+	rm *.o $(CLIENT) $(SERVER) $(LOGS)
