@@ -11,9 +11,10 @@
 #include <sys/ipc.h>
 #include <limits.h>
 #include <time.h>
+#include <mqueue.h>
+#include <fcntl.h>
 #include "config.h"
 #include <errno.h>
-#include <mqueue.h>
 
 #define MAXLINE 512
 #define C_NOSUCHCOMMAND -1
@@ -21,6 +22,7 @@
 
 mqd_t client_queue, server_queue, client_id = -1;
 pid_t pid = -1;
+char *key_str, *server_key_str;
 message_t in_message = {0L, 0, 0, 0, ""}, out_message = {0L, 0, 0, 0, ""};
 
 void str_cut(char *res, char *line, int begin, int len)
@@ -78,7 +80,10 @@ void stopSigint(int signo)
         kill(pid, SIGKILL);
     
     sendint(server_queue, T_STOP, client_id, "");
-    msgctl(client_queue, IPC_RMID, NULL);
+    // msgctl(client_queue, IPC_RMID, NULL);
+    mq_close(server_queue);
+    mq_close(client_queue);
+    mq_unlink(key_str);
     printf(" Exiting (SIGINT)...\n");
     exit(EXIT_SUCCESS);
 }
@@ -86,19 +91,29 @@ void stopSigint(int signo)
 void stopTerminal()
 {
     sendint(server_queue, T_STOP, client_id, "");
-    msgctl(client_queue, IPC_RMID, NULL);
+    // msgctl(client_queue, IPC_RMID, NULL);
+    mq_close(server_queue);
+    mq_close(client_queue);
+    mq_unlink(key_str);
     printf(" Exiting (terminal)...\n");
 }
 
 
 int main()
 {
-    key_t key = ftok(KEYPATH, CLIENTID), server_key = ftok(KEYPATH, SERVERID);
     char user_input[MAXLINE];
     int command, recieved;
 
-    server_queue = msgget(server_key, 0);
-    client_queue = msgget(key, 0777 | IPC_CREAT);
+    key_t key = ftok(KEYPATH, CLIENTID), server_key = ftok(KEYPATH, SERVERID);
+    sprintf(key_str, "%d", key);
+    sprintf(server_key_str, "%d", server_key);
+
+    struct mq_attr attributes;
+    attributes.mq_msgsize = sizeof(message_t);
+    attributes.mq_maxmsg = 16;
+
+    server_queue = mq_open(server_key_str, O_RDWR);
+    client_queue = mq_open(key_str, O_RDWR | O_CREAT | O_EXCL, 0777, &attributes);
 
     sendint(server_queue, T_INIT, key, "");
     mq_receive(client_queue, (char*) &in_message, sizeof(in_message), NULL);
@@ -149,7 +164,7 @@ int main()
         signal(SIGINT, stopSigint);
         while (1)
         {
-            recieved = mq_receive(client_queue, &in_message, sizeof(in_message), NULL);
+            recieved = mq_receive(client_queue, (char*) &in_message, sizeof(in_message), NULL);
             if (recieved > 0)
             {
                 switch (in_message.mtype)

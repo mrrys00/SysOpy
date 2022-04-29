@@ -7,13 +7,13 @@ LOGS = "logs.log"
 
 .PHONY: build_server
 build_server:
-	$(GCCF) -c $(SERVER).c
-	$(GCCF) $(SERVER).o -o $(SERVER)
+	$(GCCF) -c $(SERVER).c -lrt
+	$(GCCF) $(SERVER).o -o $(SERVER) -lrt
 
 .PHONY: build_client
 build_client:
-	$(GCCF) -c $(CLIENT).c
-	$(GCCF) $(CLIENT).o -o $(CLIENT)
+	$(GCCF) -c $(CLIENT).c -lrt
+	$(GCCF) $(CLIENT).o -o $(CLIENT) -lrt
 
 .PHONY: run_server
 run_server:
