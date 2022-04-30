@@ -113,13 +113,9 @@ int main()
             case T_TOALL:
                 printf("Client %d sending message to all clients, text: %s\n", in_message.mfrom, in_message.mtext);
                 in_message.mtime = time(NULL);
-                int i = 0;
-                while (1)
-                {
-                    if (client_queue[i] == -1) break;
-                    if (i != in_message.mfrom) msgsnd(client_queue[i], &in_message, sizeof(in_message), MSG_NOERROR);
-                    i++;
-                }
+                for (int i = 0; i < MAXCLINUM; i++)
+                    if (client_queue[i] != -1 && i != in_message.mfrom) 
+                        msgsnd(client_queue[i], &in_message, sizeof(in_message), MSG_NOERROR);
                 log_messages(in_message);
                 break;
 

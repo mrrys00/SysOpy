@@ -18,7 +18,9 @@
 #define MAXCLINUM 128
 
 #define SERVERID 128  // unique ID
+#define __NAME_SERVER "/server"
 #define CLIENTID (getpid() % 256) + 2  // always >= 2
+#define __NAME_CLIENT "/client"
 
 #define LOGNAME "logs.log"
 
@@ -28,6 +30,7 @@ typedef struct {
     int  mfrom;
     time_t mtime;
     char mtext[MAXMESLEN];
+    char client_name[128];
 } message_t;
 
 #endif
