@@ -1,6 +1,3 @@
-#include <stdlib.h>
-#include <time.h>
-
 #ifndef CONFIG_H
 #define CONFIG_H
 
@@ -8,29 +5,30 @@
 #define T_STOP 02L
 #define T_LIST 03L
 #define T_TOALL 04L
+#define T_TOALL 04L
 #define T_TOONE 05L
 #define T_ERROR 06L
-#define KEYPATH getenv("HOME")
 
 #define ERR_NOTFOUND -9
+// #define DISCONNECT_COMMAND 2
+// #define CONNECT_COMMAND 3
+
+// #define MESSAGE_COMMAND 6
+// #define CLIENT_FREE 0
+// #define CLIENT_AVAILABLE 1
+// #define CLIENT_UNAVAILABLE 2
 
 #define MAXMESLEN 500
 #define MAXCLINUM 128
-
-#define SERVERID 128  // unique ID
-#define __NAME_SERVER "/server"
-#define CLIENTID (getpid() % 256) + 2  // always >= 2
-#define __NAME_CLIENT "/client"
 
 #define LOGNAME "logs.log"
 
 typedef struct {
     long mtype;
-    int  mto;
-    int  mfrom;
-    time_t mtime;
-    char mtext[MAXMESLEN];
-    char client_name[128];
+    char message[MAX_MESSAGE_LENGTH];
+    int client_id;
+    int other_client_id;
+    char client_name[100];
 } message_t;
 
 #endif
