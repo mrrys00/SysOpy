@@ -1,18 +1,10 @@
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
-#include <signal.h>
 #include <unistd.h>
-#include <fcntl.h>
-#include <sys/types.h>
 #include <sys/wait.h>
-#include <sys/file.h>
 #include <sys/msg.h>
-#include <sys/ipc.h>
-#include <limits.h>
-#include <time.h>
+
 #include "config.h"
-#include <errno.h>
 
 #define MAXLINE 512
 #define C_NOSUCHCOMMAND -1
@@ -71,7 +63,7 @@ int sendint(int msqid, long type, int mto, char *mtext)
     return msgsnd(msqid, &out_message, sizeof(in_message), 0);
 }
 
-void stopSigint(int signo)
+void stop_sigint(int signo)
 {
     if (pid != -1)
         kill(pid, SIGKILL);
@@ -82,7 +74,7 @@ void stopSigint(int signo)
     exit(EXIT_SUCCESS);
 }
 
-void stopTerminal()
+void stop_terminal()
 {
     sendint(server_queue, T_STOP, client_id, "");
     msgctl(client_queue, IPC_RMID, NULL);
@@ -121,7 +113,7 @@ int main()
             }
             else if (command == T_STOP)
             {   
-                stopTerminal();
+                stop_terminal();
                 if (pid != -1)
                     kill(pid, SIGKILL);
                 exit(EXIT_SUCCESS);
@@ -145,7 +137,7 @@ int main()
     }
     else        // reciving messages
     {
-        signal(SIGINT, stopSigint);
+        signal(SIGINT, stop_sigint);
         while (1)
         {
             recieved = msgrcv(client_queue, &in_message, sizeof(in_message), -1000, IPC_NOWAIT & 0);
@@ -173,7 +165,7 @@ int main()
                     break;
 
                 case T_STOP:
-                    stopSigint(SIGINT);
+                    stop_sigint(SIGINT);
                 }
             }
         }

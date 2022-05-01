@@ -1,180 +1,190 @@
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
-#include <mqueue.h>
-#include <signal.h>
-#include <fcntl.h>
 #include <unistd.h>
+#include <sys/wait.h>
+#include <sys/msg.h>
+
 #include "config.h"
 
-int should_client_stop = 0;
-int is_io_interrupted;
+#define MAXLINE 512
+#define C_NOSUCHCOMMAND -1
+#define C_NOTKNOWNARG -2
 
-void handle_sigint(int signal_number) {
-    should_client_stop = 1;
+mqd_t client_queue, server_queue;
+int client_id = -1;
+char client_name[MAXCLINAM];
+pid_t pid = -1;
+message_t in_message = {0L, 0, 0, 0, "", ""}, out_message = {0L, 0, 0, 0, "", ""};
+
+void str_cut(char *res, char *line, int begin, int len)
+{   
+    int i=begin;
+    for (; i<begin+len; i++)
+        res[i-begin] = line[i];
+
+    res[i-begin] = '\0';
+    return;
 }
 
-void handle_sigio(int signal_number) {
-    is_io_interrupted = 1;
-}
-
-void stop_client(int queue_id, int client_id, int server_id, char* client_name) {
-    if (client_id == -1) {
-        mq_close(server_id);
-        mq_close(queue_id);
-        mq_unlink(client_name);
-        exit(EXIT_SUCCESS);
+void str_cut_to_char(char *res, char *line, int begin, int len, char last)
+{
+    if (line[begin] == ' ') begin++;
+    int i=begin;
+    for (; i<begin+len; i++)
+    {
+        if (line[i] == last)
+            break;
+        res[i-begin] = line[i];
     }
-    message_t message_buffer;
-    message_buffer.mtype = T_STOP;
-    message_buffer.client_id = client_id;
-    mq_send(server_id, (char*) &message_buffer, sizeof(message_buffer), message_buffer.mtype);
-    mq_close(server_id);
-    mq_close(queue_id);
-    mq_unlink(client_name);
+
+    res[i-begin] = '\0';
+    return;
+}
+
+int handle(char *line)
+{
+    char cmd[5];
+    str_cut(cmd, line, 0, 4);
+    if (strcmp(cmd, "LIST") == 0)
+        return T_LIST;
+    else if (strcmp(cmd, "2ALL") == 0)
+        return T_TOALL;
+    else if (strcmp(cmd, "2ONE") == 0)
+        return T_TOONE;
+    else if (strcmp(cmd, "STOP") == 0)
+        return T_STOP;
+    return C_NOSUCHCOMMAND;
+}
+
+int sendint(mqd_t server_queue, long type, int mto, char *mtext)
+{
+    out_message.mtype = type;
+    out_message.mto = mto;
+    out_message.mfrom = client_id;
+    strcpy(out_message.clina, client_name);
+    strcpy(out_message.mtext, mtext);
+    return mq_send(server_queue, (char*) &out_message, sizeof(out_message), type);
+}
+
+void stop_sigint(int signo)
+{
+    if (pid != -1)
+        kill(pid, SIGKILL);
+    
+    sendint(server_queue, T_STOP, client_id, "");
+    mq_close(client_queue);
+    mq_unlink(__NAME_CLIENT);
+    printf(" Exiting (SIGINT)...\n");
     exit(EXIT_SUCCESS);
 }
 
-void handle_init_command(int queue_id, int client_id, int server_id, char* client_name) {
-    message_t message_buffer;
-    message_buffer.mtype = T_INIT;
-    message_buffer.client_id = queue_id;
-    strcpy(message_buffer.client_name, client_name);
-    mq_send(server_id, (char*) &message_buffer, sizeof(message_buffer), message_buffer.mtype);
+void stop_terminal()
+{
+    sendint(server_queue, T_STOP, client_id, "");
+    mq_close(client_queue);
+    mq_unlink(__NAME_CLIENT);
+    printf(" Exiting (terminal)...\n");
 }
 
-void handle_list_command(int queue_id, int client_id, int server_id) {
-    message_t message_buffer;
-    message_buffer.mtype = T_LIST;
-    message_buffer.client_id = client_id;
-    mq_send(server_id, (char*) &message_buffer, sizeof(message_buffer), message_buffer.mtype);
-}
 
-// void handle_connect_command(int queue_id, int client_id, int server_id, char* arg) {
-//     int client_to_connect = atoi(arg);
-//     message_t message_buffer;
-//     // message_buffer.mtype = CONNECT_COMMAND;
-//     message_buffer.client_id = client_id;
-//     message_buffer.other_client_id = client_to_connect;
-//     mq_send(server_id, (char*) &message_buffer, sizeof(message_buffer), message_buffer.mtype);
-// }
+int main()
+{
+    char user_input[MAXLINE];
+    int command, recieved;
 
-// void handle_disconnect_commnand(int queue_id, int client_id, int server_id, char* client_name) {
-//     message_t message_buffer;
-//     // message_buffer.mtype = DISCONNECT_COMMAND;
-//     message_buffer.client_id = client_id;
-//     mq_send(server_id, (char*) &message_buffer, sizeof(message_buffer), message_buffer.mtype);
-// }
-
-void handle_send_command(int queue_id, int client_id, int server_id, char* arg, int other_client_id, mqd_t connected_client) {
-    if (other_client_id == -1) {
-        return;
-    }
-    message_t client_message;
-    client_message.mtype = MESSAGE_COMMAND;
-    strncpy(client_message.message, arg, MAXMESLEN - 1);
-    client_message.message[MAXMESLEN - 1] = '\0';
-    mq_send(connected_client, (char*) &client_message, sizeof(client_message), client_message.mtype);
-}
-
-void receive_list_command(message_t* client_message) {
-    for (int i = 0; i < MAXCLINUM; ++i) {
-        if (client_message->clients[i] != CLIENT_FREE) {
-            char* client_status = "waiting for connection";
-            if (client_message->clients[i] == CLIENT_UNAVAILABLE) {
-                client_status = "client already connected";
-            } 
-            printf("client id: %d  client status: %s\n", i, client_status);
-        }
-    }
-}
-
-int receive_connect_command(message_t* client_message, char* other_client_name, mqd_t* other_client_id) {
-    printf("connected with %s\n", client_message->client_name);
-    strcpy(other_client_name, client_message->client_name);
-    *other_client_id = mq_open(client_message->client_name, O_RDWR);
-    return client_message->other_client_id;
-}
-
-int receive_init_command(message_t* client_message, int queue_id, int server_id, char* client_name) {
-    int client_id = client_message->client_id;
-    if (client_id == -1) {
-        stop_client(queue_id, client_id, server_id, client_name);
-        return -1;
-    }
-    printf("client id: %d\n", client_id);
-    return client_id;
-}
-
-void handle_stdin_received(int queue_id, int client_id, int server_id, int other_client_id, char* client_name, mqd_t connected_client) {
-    char command[10000];
-    scanf("%s", command);
-    if (strcmp(command, "STOP") == 0) {
-        stop_client(queue_id, client_id, server_id, client_name);
-        return;
-    }
-    if (strcmp(command, "DISCONNECT") == 0) {
-        handle_disconnect_commnand(queue_id, client_id, server_id, client_name);
-        return;
-    }
-    if (strcmp(command, "LIST") == 0) {
-        handle_list_command(queue_id, client_id, server_id);
-        return;
-    }
-    char argument[100];
-    scanf("%s", argument);
-    if (strcmp(command, "SEND") == 0) {
-        handle_send_command(queue_id, client_id, server_id, argument, other_client_id, connected_client);   
-    }
-    if (strcmp(command, "CONNECT") == 0) {
-        handle_connect_command(queue_id, client_id, server_id, argument);
-    }
-}
-
-int main(int argc, char** argv) {
-    int client_id = -1;
-    int connected_client_id;
-    char client_name[100];
-    mqd_t other_client_id = -1;
-    char other_client_name[100];
-    sprintf(client_name, "%s%d", "/client", getpid());
     struct mq_attr attributes;
     attributes.mq_msgsize = sizeof(message_t);
-    attributes.mq_maxmsg = 10;
-    mqd_t queue_id = mq_open(client_name, O_RDWR | O_CREAT | O_EXCL, 0777, &attributes);
-    if (queue_id == -1) {
-        stop_client(queue_id, -1, -1, client_name);
-    }
-    mqd_t server_queue_id = mq_open("/server", O_RDWR);
-    if (server_queue_id == -1) {
-        stop_client(queue_id, -1, server_queue_id, client_name);
-    }
+    attributes.mq_maxmsg = MAXQUEMES;
+
     struct sigaction act;
-    act.sa_handler = handle_sigint;
+    act.sa_handler = stop_sigint;
     act.sa_flags = 0;
     sigaction(SIGINT, &act, NULL);
-    act.sa_handler = handle_sigio;
-    sigaction(SIGIO, &act, NULL);
-    fcntl(STDIN_FILENO, F_SETOWN, getpid());
-    fcntl(STDIN_FILENO, F_SETFL, O_ASYNC);
-    handle_init_command(queue_id, client_id, server_queue_id, client_name);
-    message_t client_message;
-    while (!should_client_stop) {
-        is_io_interrupted = 0;
-        mq_receive(queue_id, (char*) &client_message, sizeof(client_message), NULL);
-        if (is_io_interrupted) {
-            handle_stdin_received(queue_id, client_id, server_queue_id, connected_client_id, client_name, other_client_id);
-            continue;
-        }
-        switch (client_message.mtype) {
-            case T_INIT:       client_id = receive_init_command(&client_message, queue_id, server_queue_id, client_name);             break;
-            case T_LIST:       receive_list_command(&client_message);                                                                 break;
-            // case CONNECT_COMMAND:    connected_client_id = receive_connect_command(&client_message, other_client_name, &other_client_id);   break;
-            // case DISCONNECT_COMMAND: connected_client_id = -1;                                                                              break;
-            case T_STOP:       stop_client(queue_id, client_id, server_queue_id, client_name);                                        break;
-            // case MESSAGE_COMMAND:    printf("message from other client: %s\n", client_message.message);                                     break;
-            default:                                                                                                                        break;
+
+    sprintf(client_name, "%s%d", __NAME_CLIENT, getpid());
+    server_queue = mq_open(__NAME_SERVER, O_RDWR, 0777, &attributes);
+    client_queue = mq_open(client_name, O_RDWR | O_CREAT | O_EXCL, 0777, &attributes);
+
+    sendint(server_queue, T_INIT, client_queue, "");
+    printf("server_queue: %d\n", server_queue);
+    printf("client_queue, client_name: %d\t%s\n", client_queue, client_name);
+    mq_receive(client_queue, (char*) &in_message, sizeof(in_message), NULL);
+    client_id = in_message.mto;
+    
+    printf("\nClientID: %d\n", client_id);
+
+    if ((pid = fork()) == 0)
+    {
+        while (1)
+        {
+            fgets(user_input, MAXLINE, stdin);
+            command = handle(user_input);
+            if (command == C_NOTKNOWNARG)
+            {
+                printf("ERROR: No such command\n");
+            }
+            else if (command == T_LIST)
+            {
+                sendint(server_queue, T_LIST, 0, "");
+            }
+            else if (command == T_STOP)
+            {   
+                stop_terminal();
+                if (pid != -1)
+                    kill(pid, SIGKILL);
+                exit(EXIT_SUCCESS);
+            }
+            else if (command == T_TOALL)
+            {
+                char mtext[MAXLINE];
+                str_cut_to_char(mtext, user_input, 5, MAXLINE, '\0');
+                sendint(server_queue, T_TOALL, -1, mtext);
+            }
+            else if (command == T_TOONE)
+            {
+                char client_to_str[MAXLINE], mtext[MAXLINE];
+                int client_to;
+                str_cut_to_char(client_to_str, user_input, 5, 3, ' ');
+                client_to = atoi(client_to_str);
+                str_cut_to_char(mtext, user_input, 5+strlen(client_to_str), MAXLINE, '\0');
+                sendint(server_queue, T_TOONE, client_to, mtext);
+            }
         }
     }
-    stop_client(queue_id, client_id, server_queue_id, client_name);
+    else        // reciving messages
+    {
+        signal(SIGINT, stop_sigint);
+        while (1)
+        {
+            recieved = mq_receive(client_queue, (char*) &in_message, sizeof(in_message), NULL);
+            printf("waiting for heaven: …\n");
+            if (recieved > 0)
+            {
+                switch (in_message.mtype)
+                {
+                case T_TOALL:
+                    printf("message from %d to ALL at %ld> %s", in_message.mfrom, in_message.mtime, in_message.mtext);
+                    break;
+
+                case T_TOONE:
+                    printf("message from %d to you at %ld> %s", in_message.mfrom, in_message.mtime, in_message.mtext);
+                    break;
+
+                case T_LIST:
+                    printf("\n%s\n", in_message.mtext);
+                    break;
+
+                case T_ERROR:
+                    if (in_message.mto == ERR_NOTFOUND)
+                    {
+                        printf("WARNING: Client not found\n");
+                    }
+                    break;
+
+                case T_STOP:
+                    stop_sigint(SIGINT);
+                }
+            }
+        }
+    }
 }

@@ -1,16 +1,8 @@
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
-#include <signal.h>
 #include <unistd.h>
-#include <fcntl.h>
-#include <sys/types.h>
 #include <sys/wait.h>
-#include <sys/file.h>
 #include <sys/msg.h>
-#include <sys/ipc.h>
-#include <limits.h>
-#include <time.h>
 
 #include "config.h"
 
@@ -63,7 +55,6 @@ int main()
     int server_queue = msgget(key, 0666 | IPC_CREAT), client_id, tpos, active_clients = 0;
     ssize_t rec;
     int client_queue[MAXCLINUM];
-
 
     signal(SIGINT, server_poweroff);
 
