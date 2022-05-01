@@ -1,7 +1,3 @@
-.PHONY: submodules
-submodules:
-	git submodule update --init --recursive --remote
-
 .PHONY: lab01_tar
 lab01_tar:
 	mkdir RysSzymon
