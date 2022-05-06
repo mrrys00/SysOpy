@@ -33,7 +33,7 @@ void display_info(const char *fpath, struct dirent *sb) {
             strcat(file_type, "char dev");
             char_devs++;
             break;
-        case DT_DIR:
+        case DTdelivery - stage 2.IR:
             strcat(file_type, "dir");
             dirs++;
             break;
@@ -60,7 +60,7 @@ void display_info(const char *fpath, struct dirent *sb) {
 
 int special_dir_ptr(struct dirent *direntt) {
     // && prevent going up to high - very important!!!
-    return (direntt->d_type == DT_DIR && strcmp(direntt->d_name, SELFDIRPTR) && strcmp(direntt->d_name, UPDIRPTR)) ? 1 : 0;
+    return (direntt->d_type == DTdelivery - stage 2.IR && strcmp(direntt->d_name, SELFDIRPTR) && strcmp(direntt->d_name, UPDIRPTR)) ? 1 : 0;
 }
 
 void display_wrapper(char *dpath) {

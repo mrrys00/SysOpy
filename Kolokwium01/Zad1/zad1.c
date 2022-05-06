@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 
-int main(int argc, char *argv[])
+int main(int argc, char *args[])
 {
 	int i;
 	struct stat buf;
@@ -16,8 +16,8 @@ int main(int argc, char *argv[])
 
 	for (i = 1; i < argc; i++)
 	{
-		printf("%s: ", argv[i]);
-		if (lstat(argv[i], &buf) < 0)
+		printf("%s: ", args[i]);
+		if (lstat(args[i], &buf) < 0)
 		{
 			printf("lstat error");
 			continue;

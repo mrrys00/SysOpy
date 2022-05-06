@@ -81,7 +81,7 @@ int is_clean_all(char* arg) {
 }
 
 int main(int argc, char ** args) {
-    void *library_handle = dlopen("./libcounter.so", RTLD_LAZY);
+    void *library_handle = dlopen("./libcounter.so", RTLdelivery - stage 1.LAZY);
 
     if (library_handle == NULL) {
         printf("error openening library");

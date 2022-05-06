@@ -52,7 +52,7 @@ void server_poweroff(int signo)
 int main()
 {
     key_t key = ftok(KEYPATH, SERVERID);
-    int server_queue = msgget(key, 0666 | IPC_CREAT), client_id, tpos, active_clients = 0;
+    int server_queue = msgget(key, 0777 | IPC_CREAT), client_id, tpos, active_clients = 0;
     ssize_t rec;
     int client_queue[MAXCLINUM];
 
@@ -72,7 +72,7 @@ int main()
             case T_INIT:
                 client_id = assign_id(client_queue);
                 printf("INIT - Assigning ID = %d\n", client_id);
-                client_queue[client_id] = msgget(in_message.mto, 0666);
+                client_queue[client_id] = msgget(in_message.mto, 0777);
                 sendint(client_queue[client_id], T_INIT, client_id);
                 client_id++;
                 break;
