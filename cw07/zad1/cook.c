@@ -1,24 +1,6 @@
 #include "config.h"
 
-int oven_id, table_id, semph;
-int *oven, *table;
-
-void action_with_pizza(int semid, short semnum, int delta)
-{
-    sembuf s;
-    s.sem_num = semnum;
-    s.sem_op = delta;
-    s.sem_flg = 0;
-    semop(semid, &s, 1);
-}
-
-int findfree(int *array, size_t size)
-{
-    for (int i = 0; i < size; i++)
-        if (array[i] == -1)
-            return i;
-    return -1;
-}
+int oven_id, table_id, semph, *oven, *table;
 
 void safe_exit(int signo)
 {
@@ -27,52 +9,69 @@ void safe_exit(int signo)
     exit(EXIT_SUCCESS);
 }
 
+void action_with_pizza(int semid, short semnum, int delta)
+{
+    sembuf s;
+    s.sem_num = semnum;
+    s.sem_op = delta;
+    s.sem_flg = 0;
+    semop(semid, &s, 1);
+    return;
+}
+
+int mem_search(int *array, size_t size)
+{
+    for (int i = 0; i < size; i++)
+        if (array[i] == -1)
+            return i;
+    return -1;
+}
+
 int main()
 {
+    int idx, type;
+    srand(time(NULL));
     signal(SIGINT, safe_exit);
 
-    oven_id = shmget(ftok(HOME, PROJOVEN), 0, 0);
-    table_id = shmget(ftok(HOME, PROJTABLE), 0, 0);
+    oven_id = shmget(ftok(KEYPATH, PROJIDOVEN), 0, 0);
+    table_id = shmget(ftok(KEYPATH, PROJIDTABLE), 0, 0);
     oven = shmat(oven_id, NULL, 0);
     table = shmat(table_id, NULL, 0);
-    semph = semget(ftok(HOME, PROJSEM), 0, 0);
-    int index, type;
-
-    srand(time(NULL));
+    semph = semget(ftok(KEYPATH, PROJIDSEMA), 0, 0);
 
     while (1)
     {
         type = rand() % 10;
-        usleep(1e6 + rand1e6);
+        usleep(1e6 + 1000 * (rand() % 1000));
 
         struct timeval te;
         gettimeofday(&te, NULL);
-        printf("prepare - stage 1. pid %d\t timestamp %ld%03d ms\t I'm preparing pizza %d\n", getpid(), te.tv_sec, (int)(te.tv_usec / 1e3), type);
+        printf("pid %d\t timestamp %ld%03d \t Przygotowuje pizze: %d\n", getpid(), te.tv_sec, (int)(te.tv_usec / 1e3), type);
 
         action_with_pizza(semph, SEMOVEN, -1);
         action_with_pizza(semph, SEMOVENWIN, -1);
-        index = findfree(oven, OVENSIZE);
-        oven[index] = type;
+        idx = mem_search(oven, OVENCAPACITY);
+        oven[idx] = type;
         action_with_pizza(semph, SEMOVENWIN, 1);
 
         gettimeofday(&te, NULL);
-        printf("prepare - stage 2. pid %d\t timestamp %ld%03d ms\t I added pizza %d; there are %d in the oven\n", getpid(), te.tv_sec, (int)(te.tv_usec / 1e3), type, OVENSIZE - semctl(semph, SEMOVEN, GETVAL));
-        usleep(4e6 + rand1e6);
+        printf("pid %d\t timestamp %ld%03d \t Dodałem pizze: %d\t Liczba pizz w piecu: %d\n", getpid(), te.tv_sec, (int)(te.tv_usec / 1e3), type, OVENCAPACITY - semctl(semph, SEMOVEN, GETVAL));
+        usleep(4e6 + 1000 * (rand() % 1000));
 
         action_with_pizza(semph, SEMOVENWIN, -1);
-        type = oven[index];
-        oven[index] = -1;
+        type = oven[idx];
+        oven[idx] = -1;
         action_with_pizza(semph, SEMOVENWIN, 1);
         action_with_pizza(semph, SEMOVEN, 1);
 
         action_with_pizza(semph, SEMTABLE, -1);
         action_with_pizza(semph, SEMTABLWIN, -1);
         action_with_pizza(semph, SEMPIZZRDY, 1);
-        index = findfree(table, TABLESIZE);
-        table[index] = type;
+        idx = mem_search(table, TABLECAPACITY);
+        table[idx] = type;
         action_with_pizza(semph, SEMTABLWIN, 1);
 
         gettimeofday(&te, NULL);
-        printf("prepare - stage 3. pid %d\t timestamp %ld%03d ms\t I finished pizza %d; there are %d in the oven; there are %d on the table\n", getpid(), te.tv_sec, (int)(te.tv_usec / 1e3), type, OVENSIZE - semctl(semph, SEMOVEN, GETVAL), TABLESIZE - semctl(semph, SEMTABLE, GETVAL));
+        printf("pid %d\t timestamp %ld%03d \t Wyjmuję pizze:  %d\t Liczba pizz w piecu: %d\t Liczba pizz na stole:  %d\n", getpid(), te.tv_sec, (int)(te.tv_usec / 1e3), type, OVENCAPACITY - semctl(semph, SEMOVEN, GETVAL), TABLECAPACITY - semctl(semph, SEMTABLE, GETVAL));
     }
 }

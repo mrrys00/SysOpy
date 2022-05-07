@@ -31,4 +31,4 @@ run:
 
 .PHONY: clean
 clean:
-	rm *.o $(COOK) $(DELIVERER) $(MAIN)
+	rm $(COOK) $(DELIVERER) $(MAIN)

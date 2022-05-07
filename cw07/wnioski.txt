@@ -1,0 +1,5 @@
+N = 11; M = 12
+Kucharzy jest za dużo przez co nie działają efektywnie. Pizze są na ieżaco dobierane ze stolika jednak kucharze czekający na dostęp do pieca spowalniają działanie systemu
+
+N = 3; M = 2
+Miejsc w piecu jest wystarczająco dużo jednak przez braki w dostawcach stolik się klinuje.

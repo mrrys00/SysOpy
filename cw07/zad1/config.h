@@ -14,9 +14,9 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
-#define HOME getenv("HOME")
-#define OVENSIZE 5
-#define TABLESIZE 5
+#define KEYPATH getenv("HOME")
+#define OVENCAPACITY 5
+#define TABLECAPACITY 5
 
 #define SEMOVEN 0
 #define SEMTABLE 1
@@ -24,14 +24,12 @@
 #define SEMTABLWIN 3
 #define SEMPIZZRDY 4
 
-#define PROJOVEN 1
-#define PROJTABLE 3
-#define PROJSEM 5
+#define PROJIDOVEN 1
+#define PROJIDTABLE 2
+#define PROJIDSEMA 3
 
-#define PIZZPATH "cook"
+#define PIZZAPATH "cook"
 #define DELIVPATH "deliverer"
-
-#define rand1e6 1000 * (rand() % 1000)
 
 // "man 2 semctl"
 typedef union semun

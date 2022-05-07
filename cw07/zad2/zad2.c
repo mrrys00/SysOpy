@@ -1,7 +1,7 @@
 #include "config.h"
 
 int oven_id, table_id;
-int *ovenmem, *tablemem;
+int *oven_memory, *table_memory;
 sem_t *oven, *table, *ovenwin, *tablwin, *pizzrdy;
 
 void safe_exit(int signum)
@@ -16,10 +16,10 @@ void safe_exit(int signum)
     sem_unlink(SEMOVENWIN);
     sem_unlink(SEMTABLWIN);
     sem_unlink(SEMPIZZRDY);
-    munmap(ovenmem, OVENSIZE * sizeof(int));
-    munmap(tablemem, TABLESIZE * sizeof(int));
-    shm_unlink(MEMOVEN);
-    shm_unlink(MEMTABLE);
+    munmap(oven_memory, OVENCAPACITY * sizeof(int));
+    munmap(table_memory, TABLECAPACITY * sizeof(int));
+    shm_unlink(OVENMEMORY);
+    shm_unlink(TABLMEMORY);
     exit(EXIT_SUCCESS);
 }
 
@@ -39,34 +39,37 @@ int main(int argc, char *args[])
     }
 
     signal(SIGINT, safe_exit);
+    pid_t pid;
 
-    table = sem_open(SEMTABLE, O_CREAT | O_RDWR, 0777, TABLESIZE);
-    oven = sem_open(SEMOVEN, O_CREAT | O_RDWR, 0777, OVENSIZE);
+    table = sem_open(SEMTABLE, O_CREAT | O_RDWR, 0777, TABLECAPACITY);
+    oven = sem_open(SEMOVEN, O_CREAT | O_RDWR, 0777, OVENCAPACITY);
 
     tablwin = sem_open(SEMTABLWIN, O_CREAT | O_RDWR, 0777, 1);
     ovenwin = sem_open(SEMOVENWIN, O_CREAT | O_RDWR, 0777, 1);
     pizzrdy = sem_open(SEMPIZZRDY, O_CREAT | O_RDWR, 0777, 0);
 
-    oven_id = shm_open(MEMOVEN, O_CREAT | O_RDWR, 0777);
-    table_id = shm_open(MEMTABLE, O_CREAT | O_RDWR, 0777);
-    ftruncate(oven_id, OVENSIZE * sizeof(int));
-    ftruncate(table_id, TABLESIZE * sizeof(int));
-    ovenmem = mmap(NULL, OVENSIZE * sizeof(int), PROT_READ | PROT_WRITE, MAP_SHARED, oven_id, 0);
-    tablemem = mmap(NULL, TABLESIZE * sizeof(int), PROT_READ | PROT_WRITE, MAP_SHARED, table_id, 0);
+    oven_id = shm_open(OVENMEMORY, O_CREAT | O_RDWR, 0777);
+    table_id = shm_open(TABLMEMORY, O_CREAT | O_RDWR, 0777);
+    ftruncate(oven_id, OVENCAPACITY * sizeof(int));
+    ftruncate(table_id, TABLECAPACITY * sizeof(int));
+    oven_memory = mmap(NULL, OVENCAPACITY * sizeof(int), PROT_READ | PROT_WRITE, MAP_SHARED, oven_id, 0);
+    table_memory = mmap(NULL, TABLECAPACITY * sizeof(int), PROT_READ | PROT_WRITE, MAP_SHARED, table_id, 0);
 
-    pid_t pid;
 
-    for (int i = 0; i < OVENSIZE; i++)
-        ovenmem[i] = -1;
-    for (int i = 0; i < TABLESIZE; i++)
-        tablemem[i] = -1;
+    for (int i = 0; i < OVENCAPACITY; i++)
+        oven_memory[i] = -1;
+
+    for (int i = 0; i < TABLECAPACITY; i++)
+        table_memory[i] = -1;
+
     for (int i = 0; i < atoi(args[1]); i++)
     {
         pid = fork();
         if (pid == 0)
-            execl(PIZZPATH, PIZZPATH, NULL);
+            execl(PIZZAPATH, PIZZAPATH, NULL);
         sleep(1);
     }
+    
     for (int i = 0; i < atoi(args[2]); i++)
     {
         pid = fork();
