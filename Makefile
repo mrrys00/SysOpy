@@ -53,3 +53,11 @@ lab07_tar:
 	cp -r cw07/ RysSzymon/
 	tar czvf archives/RysSzymon-cw07.tar.gz RysSzymon/
 	rm -r RysSzymon
+
+.PHONY: lab08_tar
+lab08_tar:
+	mkdir RysSzymon
+	mkdir -p archives
+	cp -r cw08/ RysSzymon/
+	tar czvf archives/RysSzymon-cw08.tar.gz RysSzymon/
+	rm -r RysSzymon
