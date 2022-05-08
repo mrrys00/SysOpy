@@ -44,16 +44,16 @@ int main()
         usleep(1e6 + 1000 * (rand() % 1000));
         struct timeval te;
 
-        action_with_pizza(semph, SEMPIZZRDY, -1);
-        action_with_pizza(semph, SEMTABLWIN, -1);
-        action_with_pizza(semph, SEMTABLE, 1);
+        action_with_pizza(semph, FINISEMAPHORE, -1);
+        action_with_pizza(semph, ONTASEMAPHORE, -1);
+        action_with_pizza(semph, TABLSEMAPHORE, 1);
         idx = mem_search(table, TABLECAPACITY);
         type = table[idx];
         table[idx] = -1;
-        action_with_pizza(semph, SEMTABLWIN, 1);
+        action_with_pizza(semph, ONTASEMAPHORE, 1);
 
         gettimeofday(&te, NULL);
-        printf("pid %d\t timestamp %ld%03d \t Pobieram pizze: %d\t Liczba pizz na stole:  %d\n", getpid(), te.tv_sec, (int)(te.tv_usec / 1e3), type, TABLECAPACITY - semctl(semph, SEMTABLE, GETVAL));
+        printf("pid %d\t timestamp %ld%03d \t Pobieram pizze: %d\t Liczba pizz na stole:  %d\n", getpid(), te.tv_sec, (int)(te.tv_usec / 1e3), type, TABLECAPACITY - semctl(semph, TABLSEMAPHORE, GETVAL));
         usleep(4e6 + 1000 * (rand() % 1000));
 
         gettimeofday(&te, NULL);

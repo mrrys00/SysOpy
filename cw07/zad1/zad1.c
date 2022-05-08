@@ -14,14 +14,14 @@ void setinit(int semid)
 {
     semun arg;
     arg.val = TABLECAPACITY;
-    semctl(semid, SEMTABLE, SETVAL, arg);
+    semctl(semid, TABLSEMAPHORE, SETVAL, arg);
     arg.val = OVENCAPACITY;
-    semctl(semid, SEMOVEN, SETVAL, arg);
+    semctl(semid, OVENSEMAPHORE, SETVAL, arg);
     arg.val = 1;
-    semctl(semid, SEMTABLWIN, SETVAL, arg);
-    semctl(semid, SEMOVENWIN, SETVAL, arg);
+    semctl(semid, ONTASEMAPHORE, SETVAL, arg);
+    semctl(semid, INOVSEMAPHORE, SETVAL, arg);
     arg.val = 0;
-    semctl(semid, SEMPIZZRDY, SETVAL, arg);
+    semctl(semid, FINISEMAPHORE, SETVAL, arg);
     return;
 }
 
@@ -46,7 +46,7 @@ int main(int argc, char *args[])
     setinit(semph);
     for (int i = 0; i < OVENCAPACITY; i++)
         oven[i] = -1;
-        
+
     for (int i = 0; i < TABLECAPACITY; i++)
         table[i] = -1;
 

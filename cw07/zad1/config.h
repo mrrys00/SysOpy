@@ -15,21 +15,20 @@
 #define CONFIG_H
 
 #define KEYPATH getenv("HOME")
+#define PIZZAPATH "cook"
+#define DELIVPATH "deliverer"
 #define OVENCAPACITY 5
 #define TABLECAPACITY 5
 
-#define SEMOVEN 0
-#define SEMTABLE 1
-#define SEMOVENWIN 2
-#define SEMTABLWIN 3
-#define SEMPIZZRDY 4
+#define OVENSEMAPHORE 0
+#define TABLSEMAPHORE 1
+#define INOVSEMAPHORE 2
+#define ONTASEMAPHORE 3
+#define FINISEMAPHORE 4
 
 #define PROJIDOVEN 1
 #define PROJIDTABLE 2
 #define PROJIDSEMA 3
-
-#define PIZZAPATH "cook"
-#define DELIVPATH "deliverer"
 
 // "man 2 semctl"
 typedef union semun

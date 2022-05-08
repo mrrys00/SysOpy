@@ -2,20 +2,20 @@
 
 int oven_id, table_id;
 int *oven_memory, *table_memory;
-sem_t *oven, *table, *ovenwin, *tablwin, *pizzrdy;
+sem_t *oven, *table, *inoven, *intable, *finished;
 
 void safe_exit(int signum)
 {
     sem_close(oven);
     sem_close(table);
-    sem_close(ovenwin);
-    sem_close(tablwin);
-    sem_close(pizzrdy);
-    sem_unlink(SEMOVEN);
-    sem_unlink(SEMTABLE);
-    sem_unlink(SEMOVENWIN);
-    sem_unlink(SEMTABLWIN);
-    sem_unlink(SEMPIZZRDY);
+    sem_close(inoven);
+    sem_close(intable);
+    sem_close(finished);
+    sem_unlink(OVENSEMAPHORE);
+    sem_unlink(TABLSEMAPHORE);
+    sem_unlink(INOVSEMAPHORE);
+    sem_unlink(ONTASEMAPHORE);
+    sem_unlink(FINISEMAPHORE);
     munmap(oven_memory, OVENCAPACITY * sizeof(int));
     munmap(table_memory, TABLECAPACITY * sizeof(int));
     shm_unlink(OVENMEMORY);
@@ -41,12 +41,12 @@ int main(int argc, char *args[])
     signal(SIGINT, safe_exit);
     pid_t pid;
 
-    table = sem_open(SEMTABLE, O_CREAT | O_RDWR, 0777, TABLECAPACITY);
-    oven = sem_open(SEMOVEN, O_CREAT | O_RDWR, 0777, OVENCAPACITY);
+    table = sem_open(TABLSEMAPHORE, O_CREAT | O_RDWR, 0777, TABLECAPACITY);
+    oven = sem_open(OVENSEMAPHORE, O_CREAT | O_RDWR, 0777, OVENCAPACITY);
 
-    tablwin = sem_open(SEMTABLWIN, O_CREAT | O_RDWR, 0777, 1);
-    ovenwin = sem_open(SEMOVENWIN, O_CREAT | O_RDWR, 0777, 1);
-    pizzrdy = sem_open(SEMPIZZRDY, O_CREAT | O_RDWR, 0777, 0);
+    intable = sem_open(ONTASEMAPHORE, O_CREAT | O_RDWR, 0777, 1);
+    inoven = sem_open(INOVSEMAPHORE, O_CREAT | O_RDWR, 0777, 1);
+    finished = sem_open(FINISEMAPHORE, O_CREAT | O_RDWR, 0777, 0);
 
     oven_id = shm_open(OVENMEMORY, O_CREAT | O_RDWR, 0777);
     table_id = shm_open(TABLMEMORY, O_CREAT | O_RDWR, 0777);
@@ -69,7 +69,7 @@ int main(int argc, char *args[])
             execl(PIZZAPATH, PIZZAPATH, NULL);
         sleep(1);
     }
-    
+
     for (int i = 0; i < atoi(args[2]); i++)
     {
         pid = fork();

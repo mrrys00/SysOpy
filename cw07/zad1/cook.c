@@ -19,17 +19,17 @@ void action_with_pizza(int semid, short semnum, int delta)
     return;
 }
 
-int mem_search(int *array, size_t size)
+int mem_search(int *list, size_t size)
 {
     for (int i = 0; i < size; i++)
-        if (array[i] == -1)
+        if (list[i] == -1)
             return i;
     return -1;
 }
 
 int main()
 {
-    int idx, type;
+    int idx, pizza_type;
     srand(time(NULL));
     signal(SIGINT, safe_exit);
 
@@ -41,37 +41,37 @@ int main()
 
     while (1)
     {
-        type = rand() % 10;
+        pizza_type = rand() % 10;
         usleep(1e6 + 1000 * (rand() % 1000));
 
         struct timeval te;
         gettimeofday(&te, NULL);
-        printf("pid %d\t timestamp %ld%03d \t Przygotowuje pizze: %d\n", getpid(), te.tv_sec, (int)(te.tv_usec / 1e3), type);
+        printf("pid %d\t timestamp %ld%03d \t Przygotowuje pizze: %d\n", getpid(), te.tv_sec, (int)(te.tv_usec / 1e3), pizza_type);
 
-        action_with_pizza(semph, SEMOVEN, -1);
-        action_with_pizza(semph, SEMOVENWIN, -1);
+        action_with_pizza(semph, OVENSEMAPHORE, -1);
+        action_with_pizza(semph, INOVSEMAPHORE, -1);
         idx = mem_search(oven, OVENCAPACITY);
-        oven[idx] = type;
-        action_with_pizza(semph, SEMOVENWIN, 1);
+        oven[idx] = pizza_type;
+        action_with_pizza(semph, INOVSEMAPHORE, 1);
 
         gettimeofday(&te, NULL);
-        printf("pid %d\t timestamp %ld%03d \t Dodałem pizze: %d\t Liczba pizz w piecu: %d\n", getpid(), te.tv_sec, (int)(te.tv_usec / 1e3), type, OVENCAPACITY - semctl(semph, SEMOVEN, GETVAL));
+        printf("pid %d\t timestamp %ld%03d \t Dodałem pizze: %d\t Liczba pizz w piecu: %d\n", getpid(), te.tv_sec, (int)(te.tv_usec / 1e3), pizza_type, OVENCAPACITY - semctl(semph, OVENSEMAPHORE, GETVAL));
         usleep(4e6 + 1000 * (rand() % 1000));
 
-        action_with_pizza(semph, SEMOVENWIN, -1);
-        type = oven[idx];
+        action_with_pizza(semph, INOVSEMAPHORE, -1);
+        pizza_type = oven[idx];
         oven[idx] = -1;
-        action_with_pizza(semph, SEMOVENWIN, 1);
-        action_with_pizza(semph, SEMOVEN, 1);
+        action_with_pizza(semph, INOVSEMAPHORE, 1);
+        action_with_pizza(semph, OVENSEMAPHORE, 1);
 
-        action_with_pizza(semph, SEMTABLE, -1);
-        action_with_pizza(semph, SEMTABLWIN, -1);
-        action_with_pizza(semph, SEMPIZZRDY, 1);
+        action_with_pizza(semph, TABLSEMAPHORE, -1);
+        action_with_pizza(semph, ONTASEMAPHORE, -1);
+        action_with_pizza(semph, FINISEMAPHORE, 1);
         idx = mem_search(table, TABLECAPACITY);
-        table[idx] = type;
-        action_with_pizza(semph, SEMTABLWIN, 1);
+        table[idx] = pizza_type;
+        action_with_pizza(semph, ONTASEMAPHORE, 1);
 
         gettimeofday(&te, NULL);
-        printf("pid %d\t timestamp %ld%03d \t Wyjmuję pizze:  %d\t Liczba pizz w piecu: %d\t Liczba pizz na stole:  %d\n", getpid(), te.tv_sec, (int)(te.tv_usec / 1e3), type, OVENCAPACITY - semctl(semph, SEMOVEN, GETVAL), TABLECAPACITY - semctl(semph, SEMTABLE, GETVAL));
+        printf("pid %d\t timestamp %ld%03d \t Wyjmuję pizze:  %d\t Liczba pizz w piecu: %d\t Liczba pizz na stole:  %d\n", getpid(), te.tv_sec, (int)(te.tv_usec / 1e3), pizza_type, OVENCAPACITY - semctl(semph, OVENSEMAPHORE, GETVAL), TABLECAPACITY - semctl(semph, TABLSEMAPHORE, GETVAL));
     }
 }
