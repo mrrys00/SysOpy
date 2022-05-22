@@ -26,6 +26,8 @@ typedef struct
     int width;
     int height;
     int color_range;
+    int thread_num;
+    int i;
     long *retptr;
 } thread_args;
 
@@ -90,31 +92,50 @@ char *read_numb(FILE *fip, char *buf)
 
 void *numbe_proc(void *varg)
 {
-    long tm_µs = get_time();
+    long us = get_time();
     thread_args *arg = (thread_args *)varg;
 
-    int pix_num = arg -> width * arg -> height;
+    int min_val, \
+    max_val, \
+    pix_num = arg -> width * arg -> height;
+    
+    if (arg -> i == 0)
+        min_val = 0;
+    else
+        min_val = (arg -> i * arg -> color_range / arg -> thread_num) + 1;
+
+    if (arg -> i == arg -> thread_num - 1)
+        max_val = arg -> color_range;
+    else
+        max_val = (arg -> i + 1) * arg -> color_range / arg -> thread_num;
 
     for (int i = 0; i < pix_num; i++)
-        arg -> o_data[i] = arg -> color_range - arg -> i_data[i];
+        if (min_val <= arg -> i_data[i] && arg -> i_data[i] <= max_val)
+            arg -> o_data[i] = arg -> color_range - arg -> i_data[i];
 
-    tm_µs = get_time() - tm_µs;
-    *(arg -> retptr) = tm_µs;
+    us = get_time() - us;
+    *(arg -> retptr) = us;
     pthread_exit(arg -> retptr);
     return NULL;
 }
 
 void *block_proc(void *varg)
 {
-    long tm_µs = get_time();
+    long us = get_time();
     thread_args *arg = (thread_args *)varg;
     
-    for (int w = 0; w < arg -> width; w++)
-        for (int h = 0; h < arg -> height; h++)
-                arg -> o_data[h * arg -> width + w] = arg -> color_range - arg -> i_data[h * arg -> width + w];
+    // przyznam szczerze - poniższe dwie linijki bolą w oczy ale to jest "po prostu" ten wzorek z UPELa
+    int min_val = arg -> i * ((arg -> width + (arg -> thread_num - arg -> width % arg -> thread_num)) / arg -> thread_num), \
+    max_val = (arg -> i + 1) * ((arg -> width + (arg -> thread_num - arg -> width % arg -> thread_num)) / arg -> thread_num) - 1;
 
-    tm_µs = get_time() - tm_µs;
-    *(arg -> retptr) = tm_µs;
+    if (max_val >= 0 && min_val < arg -> width && min_val <= max_val)
+        for (int w = 0; w < arg -> width; w++)
+            for (int h = 0; h < arg -> height; h++)
+                if (min_val <= w && w <= max_val)
+                    arg -> o_data[h * arg -> width + w] = arg -> color_range - arg -> i_data[h * arg -> width + w];
+
+    us = get_time() - us;
+    *(arg -> retptr) = us;
     pthread_exit(arg -> retptr);
     return NULL;
 }
@@ -172,12 +193,14 @@ int main(int argc, char *args[])
     // tworzenie wątków
     for (int i = 0; i < thread_num; i++)
     {
+        t_args[i].i = i;
         t_args[i].i_data = i_data;
         t_args[i].o_data = o_data;
         t_args[i].width = width;
         t_args[i].height = height;
         t_args[i].retptr = &retptr[i];
         t_args[i].color_range = color_range;
+        t_args[i].thread_num = thread_num;
         if (mode == block_num)
             pthread_create(&threads[i], NULL, block_proc, &t_args[i]);
         else
@@ -224,3 +247,14 @@ int main(int argc, char *args[])
 
     exit(EXIT_SUCCESS);
 }
+
+// backup
+// Eksperyment przeprowadzony na procesorze Intel® Core™ i7-1165G7 (https://ark.intel.com/content/www/us/en/ark/products/208921/intel-core-i71165g7-processor-12m-cache-up-to-4-70-ghz-with-ipu.html) - 4 rdzenie; 8 wątków
+// 1. W modelu blokowym w modelu blokowym przydziału wątków widzimy spadek czasu wykonania od 1 do 8 wątków oraz dalszy wzrost tego czasu dla rosnącej liczby wątków. Dla 8 wątków widać też możliwie "najbardziej sprawiedliwy" podział czasu pracy dla wątków.
+// 2. W modelu numbers naljepszy czas uzyskujemy dla 6 wątków, później 4 i 2, od 9 wątków widzimy stały przyrost czasu. Dla 6 wątków widać też możliwie "najbardziej sprawiedliwy" podział czasu pracy dla wątków.
+// 3. Model numbers działa szybciej od modelu blokowego
+// Są to (prawie) spodziewane wyniki ponieważ:
+// 1. Najlepszy czas uzyskaliśmy dla 8 wątków ponieważ procesor na którym pracujemy ma do dyspozycji 8 wątków. Spodziewałem się, że najlepszy wynik otrzymam dla ilości wątków równej ilości wątków procesora minus 1 (lub ewentualnie -2).
+// 2. Tutaj wynik jest bardziej spodziewany (patrz pt 1.).
+// 3. Nie trudno było się domyślić, że tak się stanie - w modelu numbers przydział wątków jest (można powiedzieć) "liniowy" (for … if … przydziel wątek) a w modelu blokowym "kwadratowy z założeniami" (if … for … for … if … przydziel wątek) zatem model blokowy okazał się zdecydowanie mniej wydajny od numbers.
+// 1,2. Całkowity czas pracy rośnie wraz z ilością wątków ponieważ musimy doliczyć czas na tworzenie i nie wydajną obsługę wątków z których i tak procesor (przez swoje fizyczne ograniczenia czyli 8 wątków) nie może korzystać cały czas 
