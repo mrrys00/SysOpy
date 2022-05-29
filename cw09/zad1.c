@@ -6,7 +6,7 @@
 #include <sys/time.h>
 #include <pthread.h>
 
-// wywalić to ze zmiennych globalnych - wrzucić w strukturkę!!!
+
 pthread_t threads[20];  // mikołaj + 9 reniferów + 10 elfów
 int waitnum = 0, returned = 0, waiting[3];
 
@@ -25,6 +25,7 @@ pthread_cond_t quit = PTHREAD_COND_INITIALIZER;
 
 void safe_exit(int signo)
 {
+    // "You can't have data of your own passed to the signal handler as parameters. Instead you'll have to store your parameters in global variables." ~ https://stackoverflow.com/questions/6970224/providing-passing-argument-to-signal-handler 
     if (signo == SIGINT)
     {
         for (int i = 0; i < 20; i++)
@@ -34,13 +35,14 @@ void safe_exit(int signo)
     return;
 }
 
-void randsleep(double from, double to)
+void sweet_dreams(double mini, double maxi)
 {
-    usleep(((rand() % 1000) * 1000) * (to - from) + from * 1000000);
+    // randomized sleep time in µseconds
+    usleep(((rand() % 1000) * 1000) * (maxi - mini) + mini * 1000000);
     return;
 }
 
-void *santa_routine(void *varg)
+void *santa_thread(void *varg)
 {
     while (1)
     {
@@ -53,7 +55,7 @@ void *santa_routine(void *varg)
         {
             printf("Mikołaj: budzę się\n");
             printf("Mikołaj: dostarczam zabawki\n");
-            randsleep(2.0, 4.0);
+            sweet_dreams(2.0, 4.0);
             returned = 0;
             printf("Mikołaj: zasypiam\n");
         }
@@ -65,7 +67,7 @@ void *santa_routine(void *varg)
         {
             printf("Mikołaj: budzę się\n");
             printf("Mikołaj: rozwiązuje problemy elfów %d %d %d ID\n", waiting[0], waiting[1], waiting[2]);
-            randsleep(1.0, 2.0);
+            sweet_dreams(1.0, 2.0);
             waitnum = 0;
             printf("Mikołaj: zasypiam\n");
         }
@@ -74,12 +76,12 @@ void *santa_routine(void *varg)
     }
 }
 
-void *elf_routine(void *varg)
+void *elf_thread(void *varg)
 {
     int id = *((int *)varg);
     while (1)
     {
-        randsleep(2.0, 5.0);
+        sweet_dreams(2.0, 5.0);
         pthread_mutex_lock(&wait_mutex);
         if (waitnum < 3)
         {
@@ -103,12 +105,12 @@ void *elf_routine(void *varg)
     }
 }
 
-void *raindeer_routine(void *varg)
+void *raindeer_thread(void *varg)
 {
     int id = *((int *)varg);
     while (1)
     {
-        randsleep(5.0, 10.0);
+        sweet_dreams(5.0, 10.0);
         pthread_mutex_lock(&ret_mutex);
         returned++;
         printf("Renifer: czeka %d reniferów na Mikołaja, %d\n", id, returned);
@@ -131,15 +133,15 @@ int main()
     int IDs[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
 
     //stworzenie mikołaja
-    pthread_create(santa, NULL, santa_routine, NULL);
+    pthread_create(santa, NULL, santa_thread, NULL);
 
     // tworzenie elfów
     for (int i = 0; i < elfs_num; i++)
-        pthread_create(&elf[i], NULL, elf_routine, (void *)&IDs[i]);
+        pthread_create(&elf[i], NULL, elf_thread, (void *)&IDs[i]);
 
     // tworzenie reniferów
     for (int i = 0; i < raindeer_num; i++)
-        pthread_create(&raindeer[i], NULL, raindeer_routine, (void *)&IDs[i]);
+        pthread_create(&raindeer[i], NULL, raindeer_thread, (void *)&IDs[i]);
 
     // mutex wyjścia z programu
     pthread_cond_wait(&quit, &quit_mutex);
