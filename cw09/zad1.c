@@ -22,18 +22,6 @@ pthread_cond_t elf_problem_solved = PTHREAD_COND_INITIALIZER;
 pthread_cond_t give_gifts = PTHREAD_COND_INITIALIZER;
 pthread_cond_t exitt = PTHREAD_COND_INITIALIZER;
 
-void safe_exit(int signo)
-{
-    // "You can't have data of your own passed to the signal handler as parameters. Instead you'll have to store your parameters in global variables." ~ https://stackoverflow.com/questions/6970224/providing-passing-argument-to-signal-handler
-    if (signo == SIGINT)
-    {
-        for (int i = 0; i < actors_num; i++)
-            pthread_cancel(threads[i]);
-        pthread_cond_broadcast(&exitt);
-    }
-    return;
-}
-
 void sweet_dreams(double mini, double maxi)
 {
     // randomized sleep time in µseconds
@@ -138,6 +126,19 @@ void *raindeer_thread(void *varg)
         pthread_mutex_unlock(&return_mutex);
     }
 }
+
+void safe_exit(int signo)
+{
+    // "You can't have data of your own passed to the signal handler as parameters. Instead you'll have to store your parameters in global variables." ~ https://stackoverflow.com/questions/6970224/providing-passing-argument-to-signal-handler
+    if (signo == SIGINT)
+    {
+        for (int i = 0; i < actors_num; i++)
+            pthread_cancel(threads[i]);
+        pthread_cond_broadcast(&exitt);
+    }
+    return;
+}
+
 
 int main()
 {
