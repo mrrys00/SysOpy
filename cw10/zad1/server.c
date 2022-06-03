@@ -437,7 +437,7 @@ int main(int argc, char *args[])
 
     srand(time(NULL));
     args_t thread_args;
-    int waiting_client_fd = 0;
+    thread_args.waiting_client_fd = 0;
 
     // client_t clients[MAX_CLIENT];
     // game_t games[MAX_GAMES];
@@ -518,6 +518,6 @@ int main(int argc, char *args[])
     pthread_t pinging_thread;
     pthread_create(&pinging_thread, NULL, pinging_thread_routine, (void *)&thread_args);
 
-    start_event_loop(server_socket, unix_server_socket, &waiting_client_fd, thread_args.clients, thread_args.games);
+    start_event_loop(server_socket, unix_server_socket, &thread_args.waiting_client_fd, thread_args.clients, thread_args.games);
     return EXIT_SUCCESS;
 }
