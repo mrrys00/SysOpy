@@ -26,4 +26,14 @@ typedef struct
     int has_started;
 } game_t;
 
+typedef struct
+{
+    client_t clients[MAX_CLIENT];
+    game_t games[MAX_GAMES];
+    int waiting_client_fd;
+    pthread_mutex_t socket_mutex;
+    int epoll;
+} args_t;
+
+
 #endif
