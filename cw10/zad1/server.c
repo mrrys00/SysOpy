@@ -13,7 +13,7 @@
 #include <pthread.h>
 #include "config.h"
 
-int waiting_client_fd = 0;
+
 pthread_mutex_t socket_mutex = PTHREAD_MUTEX_INITIALIZER;
 int epoll;
 char *unix_socket_path;
@@ -196,7 +196,7 @@ char check_winner(int game_id, game_t *games)
     return 'D'; // draw
 }
 
-void read_from_socket(int client_fd, int epoll, client_t *clients, game_t *games)
+void read_from_socket(int client_fd, int epoll, int *waiting_client_fd, client_t *clients, game_t *games)
 {
     char buffer[1001];
     int read_bytes_count = recv(client_fd, buffer, 1000, 0);
@@ -222,19 +222,19 @@ void read_from_socket(int client_fd, int epoll, client_t *clients, game_t *games
             }
             remove_client(client_fd, epoll, 0, clients, games);
         }
-        else if (waiting_client_fd != 0)
+        else if (*waiting_client_fd != 0)
         {
-            int game_id = create_game(waiting_client_fd, client_fd, games);
+            int game_id = create_game(*waiting_client_fd, client_fd, games);
             for (int i = 0; i < MAX_CLIENT; i++)
             {
-                if (clients[i].fd == waiting_client_fd)
+                if (clients[i].fd == *waiting_client_fd)
                 {
                     clients[i].paired_fd = client_fd;
                     clients[i].game_id = game_id;
                 }
                 if (clients[i].fd == client_fd)
                 {
-                    clients[i].paired_fd = waiting_client_fd;
+                    clients[i].paired_fd = *waiting_client_fd;
                     clients[i].game_id = game_id;
                 }
             }
@@ -253,20 +253,20 @@ void read_from_socket(int client_fd, int epoll, client_t *clients, game_t *games
             }
                 
             message[message_length] = '\0';
-            if (games[game_id].player_x == waiting_client_fd)
+            if (games[game_id].player_x == *waiting_client_fd)
                 strcat(message, "\nPlaying with X\n");
             else
                 strcat(message, "\nPlaying with O\n");
 
-            if (send(waiting_client_fd, message, strlen(message), 0) == -1)
+            if (send(*waiting_client_fd, message, strlen(message), 0) == -1)
             {
-                remove_client(waiting_client_fd, epoll, 1, clients, games);
+                remove_client(*waiting_client_fd, epoll, 1, clients, games);
                 return;
             }
-            waiting_client_fd = 0;
+            *waiting_client_fd = 0;
         }
         else
-            waiting_client_fd = client_fd;
+            *waiting_client_fd = client_fd;
     }
 
     if (strcmp(buffer, "PONG") == 0)
@@ -337,7 +337,7 @@ void read_from_socket(int client_fd, int epoll, client_t *clients, game_t *games
     }
 }
 
-void handle_event(int server_socket, int unix_socket, struct epoll_event *event, int epoll, client_t *clients, game_t *games)
+void handle_event(int server_socket, int unix_socket, struct epoll_event *event, int epoll, int *waiting_client_fd, client_t *clients, game_t *games)
 {
     if (event->data.fd == server_socket)
     {
@@ -353,13 +353,13 @@ void handle_event(int server_socket, int unix_socket, struct epoll_event *event,
 
     int client_fd = event->data.fd;
     if (event->events & EPOLLIN)
-        read_from_socket(client_fd, epoll, clients, games);
+        read_from_socket(client_fd, epoll, waiting_client_fd, clients, games);
 
     if (event->events & EPOLLHUP)
         remove_client(client_fd, epoll, 1, clients, games);
 }
 
-void start_event_loop(int server_socket, int unix_server_socket, client_t *clients, game_t *games)
+void start_event_loop(int server_socket, int unix_server_socket, int *waiting_client_fd, client_t *clients, game_t *games)
 {
     epoll = epoll_create1(0);
     struct epoll_event server_event;
@@ -391,7 +391,7 @@ void start_event_loop(int server_socket, int unix_server_socket, client_t *clien
         
         pthread_mutex_lock(&socket_mutex);
         for (int i = 0; i < events_count; i++)
-            handle_event(server_socket, unix_server_socket, &events[i], epoll, clients, games);
+            handle_event(server_socket, unix_server_socket, &events[i], epoll, waiting_client_fd, clients, games);
     }
 }
 
@@ -437,9 +437,10 @@ int main(int argc, char *args[])
 
     srand(time(NULL));
     args_t thread_args;
+    int waiting_client_fd = 0;
 
     // client_t clients[MAX_CLIENT];
-    game_t games[MAX_GAMES];
+    // game_t games[MAX_GAMES];
 
     client_t empty_client;
     empty_client.fd = 0;
@@ -455,7 +456,7 @@ int main(int argc, char *args[])
     empty_game.has_started = 0;
     empty_game.moving_side = 'X';
     for (int i = 0; i < MAX_GAMES; i++)
-        games[i] = empty_game;
+        thread_args.games[i] = empty_game;
 
     int server_socket = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);
     if (server_socket == -1)
@@ -512,11 +513,11 @@ int main(int argc, char *args[])
         return EXIT_FAILURE;
     }
 
-    signal(SIGINT, safe_exit); // remove unix socket on CRTL + C
+    signal(SIGINT, safe_exit);
 
     pthread_t pinging_thread;
     pthread_create(&pinging_thread, NULL, pinging_thread_routine, (void *)&thread_args);
 
-    start_event_loop(server_socket, unix_server_socket, thread_args.clients, games);
+    start_event_loop(server_socket, unix_server_socket, &waiting_client_fd, thread_args.clients, thread_args.games);
     return EXIT_SUCCESS;
 }
