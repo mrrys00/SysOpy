@@ -57,12 +57,12 @@ void clean_game(int game_index, game_t *games)
 void print_board(int game_id, char *res, game_t *games)
 {
     res[0] = '\0';
-    strcat(res, "BOARD:\n");
+    strcat(res, "STATE:\n");
     char *board = games[game_id].board;
     char row[21];
     for (int i = 0; i < 3; i++)
     {
-        sprintf(row, "%c | %c | %c\n---------\n", board[i * 3], board[i * 3 + 1], board[i * 3 + 2]);
+        sprintf(row, "%c%c%c\n", board[i * 3], board[i * 3 + 1], board[i * 3 + 2]);
         strcat(res, row);
     }
     return;
@@ -254,9 +254,9 @@ void read_socket(int client_fd, args_t *args)
             print_board(game_id, message, args->games);
             int message_length = strlen(message);
             if (args->games[game_id].player_x == client_fd)
-                strcat(message, "\nPlaying with X\n");
+                strcat(message, "\nPlaying with X\nhow to?\ninput numbers:\n123\n456\n789\n");
             else
-                strcat(message, "\nPlaying with O\n");
+                strcat(message, "\nPlaying with O\nhow to?\ninput numbers:\n123\n456\n789\n");
 
             if (send(client_fd, message, strlen(message), 0) == -1)
             {

@@ -47,7 +47,7 @@ void event_handling(int client_socket, struct epoll_event *event, int epoll, int
             char *message = "resp_";
             send(client_socket, message, strlen(message), 0);
         }
-        else if (strncmp(buffer, "BOARD:\n", strlen("BOARD:\n")) == 0)
+        else if (strncmp(buffer, "STATE:\n", strlen("STATE:\n")) == 0)
         {
             if (*should_change_player_turn)
                 *is_client_turn = !*is_client_turn;
