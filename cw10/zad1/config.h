@@ -30,8 +30,8 @@ typedef struct
 {
     client_t clients[MAX_CLIENT];
     game_t games[MAX_GAMES];
-    int waiting_client_fd;      // change to ptr
-    int epoll;      // change to ptr
+    int *waiting_client_fd;      // change to ptr
+    int *epoll;      // change to ptr
 } args_t;
 
 

@@ -15,7 +15,6 @@
 
 
 pthread_mutex_t socket_mutex = PTHREAD_MUTEX_INITIALIZER;
-int epoll;
 char *unix_socket_path;
 
 void safe_exit(int signal_number)
@@ -24,13 +23,13 @@ void safe_exit(int signal_number)
     exit(EXIT_SUCCESS);
 }
 
-void add_client(int client_fd, int epoll, client_t *clients)
+void connect_client(int client_fd, int *epoll, client_t *clients)
 {
     struct epoll_event client_event;
     client_event.events = EPOLLIN;
     client_event.data.fd = client_fd;
 
-    if (epoll_ctl(epoll, EPOLL_CTL_ADD, client_fd, &client_event) == -1)
+    if (epoll_ctl(*epoll, EPOLL_CTL_ADD, client_fd, &client_event) == -1)
     {
         perror("epoll_ctl add");
         exit(EXIT_FAILURE);
@@ -67,10 +66,10 @@ void game_to_string(int game_id, char *result, game_t *games)
     }
 }
 
-void remove_client(int client_fd, int epoll, int remove_paired_client, client_t *clients, game_t *games)
+void remove_client(int client_fd, int *epoll, int remove_paired_client, client_t *clients, game_t *games)
 {
     printf("removing client %d\n", client_fd);
-    if (epoll_ctl(epoll, EPOLL_CTL_DEL, client_fd, NULL) == -1)
+    if (epoll_ctl(*epoll, EPOLL_CTL_DEL, client_fd, NULL) == -1)
     {
         perror("epoll_ctl remove");
         exit(EXIT_FAILURE);
@@ -123,7 +122,7 @@ int set_client_name(int client_fd, char *name, client_t *clients)
     return -1;
 }
 
-void accept_connection(int server_socket, int epoll, client_t *clients)
+void accept_connection(int server_socket, int *epoll, client_t *clients)
 {
     int client_fd = accept4(server_socket, NULL, NULL, SOCK_NONBLOCK);
 
@@ -133,7 +132,7 @@ void accept_connection(int server_socket, int epoll, client_t *clients)
         exit(EXIT_FAILURE);
     }
 
-    add_client(client_fd, epoll, clients);
+    connect_client(client_fd, epoll, clients);
     printf("client with fd %d connected\n", client_fd);
 }
 
@@ -196,7 +195,7 @@ char check_winner(int game_id, game_t *games)
     return 'D'; // draw
 }
 
-void read_from_socket(int client_fd, int epoll, int *waiting_client_fd, client_t *clients, game_t *games)
+void read_from_socket(int client_fd, int *epoll, int *waiting_client_fd, client_t *clients, game_t *games)
 {
     char buffer[1001];
     int read_bytes_count = recv(client_fd, buffer, 1000, 0);
@@ -337,42 +336,42 @@ void read_from_socket(int client_fd, int epoll, int *waiting_client_fd, client_t
     }
 }
 
-void handle_event(int server_socket, int unix_socket, struct epoll_event *event, int epoll, int *waiting_client_fd, client_t *clients, game_t *games)
+void handle_event(int server_socket, int unix_socket, struct epoll_event *event, args_t *args)
 {
     if (event->data.fd == server_socket)
     {
-        accept_connection(server_socket, epoll, clients);
+        accept_connection(server_socket, args->epoll, args->clients);
         return;
     }
 
     if (event->data.fd == unix_socket)
     {
-        accept_connection(unix_socket, epoll, clients);
+        accept_connection(unix_socket, args->epoll, args->clients);
         return;
     }
 
     int client_fd = event->data.fd;
     if (event->events & EPOLLIN)
-        read_from_socket(client_fd, epoll, waiting_client_fd, clients, games);
+        read_from_socket(client_fd, args->epoll, args->waiting_client_fd, args->clients, args->games);
 
     if (event->events & EPOLLHUP)
-        remove_client(client_fd, epoll, 1, clients, games);
+        remove_client(client_fd, args->epoll, 1, args->clients, args->games);
 }
 
-void start_event_loop(int server_socket, int unix_server_socket, int *waiting_client_fd, client_t *clients, game_t *games)
+void start_event_loop(int server_socket, int unix_server_socket, args_t *args)
 {
-    epoll = epoll_create1(0);
+    *args->epoll = epoll_create1(0);
     struct epoll_event server_event;
     server_event.events = EPOLLIN;
     server_event.data.fd = server_socket;
-    if (epoll_ctl(epoll, EPOLL_CTL_ADD, server_socket, &server_event) == -1)
+    if (epoll_ctl(*args->epoll, EPOLL_CTL_ADD, server_socket, &server_event) == -1)
     {
         perror("epoll_ctl");
         exit(EXIT_FAILURE);
     }
 
     server_event.data.fd = unix_server_socket;
-    if (epoll_ctl(epoll, EPOLL_CTL_ADD, unix_server_socket, &server_event) == -1)
+    if (epoll_ctl(*args->epoll, EPOLL_CTL_ADD, unix_server_socket, &server_event) == -1)
     {
         perror("epoll_ctl");
         exit(EXIT_FAILURE);
@@ -382,7 +381,7 @@ void start_event_loop(int server_socket, int unix_server_socket, int *waiting_cl
     while (1)
     {
         pthread_mutex_unlock(&socket_mutex);
-        int events_count = epoll_wait(epoll, events, EPOLL_EVENTS_SIZE, -1);
+        int events_count = epoll_wait(*args->epoll, events, EPOLL_EVENTS_SIZE, -1);
         if (events_count == -1)
         {
             perror("epoll_wait");
@@ -391,7 +390,7 @@ void start_event_loop(int server_socket, int unix_server_socket, int *waiting_cl
         
         pthread_mutex_lock(&socket_mutex);
         for (int i = 0; i < events_count; i++)
-            handle_event(server_socket, unix_server_socket, &events[i], epoll, waiting_client_fd, clients, games);
+            handle_event(server_socket, unix_server_socket, &events[i], args);
     }
 }
 
@@ -409,9 +408,9 @@ void *pinging_thread_routine(void *arg)
                 if (!args->clients[i].has_ping_responded)
                 {
                     if (args->clients[i].paired_fd != 0)
-                        remove_client(args->clients[i].fd, epoll, 1, args->clients, args->games);
+                        remove_client(args->clients[i].fd, args->epoll, 1, args->clients, args->games);
                     else
-                        remove_client(args->clients[i].fd, epoll, 0, args->clients, args->games);
+                        remove_client(args->clients[i].fd, args->epoll, 0, args->clients, args->games);
                 }
                 else
                 {
@@ -425,6 +424,92 @@ void *pinging_thread_routine(void *arg)
     return NULL;
 }
 
+int full_init(int *port, int *server_socket, int *unix_server_socket, args_t *args)
+{
+    *server_socket = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);
+    if (*server_socket == -1)
+    {
+        perror("socket");
+        return EXIT_FAILURE;
+    }
+
+    int opt = 1;
+    if (setsockopt(*server_socket, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt)) == -1)
+    {
+        perror("setsockopt");
+        return EXIT_FAILURE;
+    }
+
+    struct sockaddr_in address;
+    address.sin_family = AF_INET;
+    address.sin_addr.s_addr = INADDR_ANY;
+    address.sin_port = htons(*port);
+
+    if (bind(*server_socket, (struct sockaddr *)&address, sizeof(address)) == -1)
+    {
+        perror("bind");
+        return EXIT_FAILURE;
+    }
+
+    if (listen(*server_socket, CONNECTION_QUEUE_SIZE) == -1)
+    {
+        perror("listen");
+        return EXIT_FAILURE;
+    }
+
+    *unix_server_socket = socket(AF_UNIX, SOCK_STREAM | SOCK_NONBLOCK, 0);
+    if (*unix_server_socket == -1)
+    {
+        perror("unix socket");
+        return EXIT_FAILURE;
+    }
+
+    struct sockaddr_un server_unix_address;
+    server_unix_address.sun_family = AF_UNIX;
+    strcpy(server_unix_address.sun_path, unix_socket_path);
+
+    if (bind(*unix_server_socket, (struct sockaddr *)&server_unix_address, sizeof(server_unix_address)) == -1)
+    {
+        perror("unix bind");
+        return EXIT_FAILURE;
+    }
+
+    if (listen(*unix_server_socket, CONNECTION_QUEUE_SIZE) == -1)
+    {
+        perror("unix listen");
+        return EXIT_FAILURE;
+    }
+
+    pthread_t pinging_thread;
+    pthread_create(&pinging_thread, NULL, pinging_thread_routine, (void *)&args);
+
+    return 0;
+}
+
+void init_client(client_t clients[])
+{
+    client_t empty_client;
+    empty_client.fd = 0;
+    empty_client.paired_fd = 0;
+    empty_client.game_id = -1;
+    empty_client.name[0] = '\0';
+    empty_client.has_ping_responded = 1;
+    for (int i = 0; i < MAX_CLIENT; i++)
+        clients[i] = empty_client;
+    return;
+}
+
+void init_games(game_t games[])
+{
+    game_t empty_game;
+    strcpy(empty_game.board, "         ");
+    empty_game.has_started = 0;
+    empty_game.moving_side = 'X';
+    for (int i = 0; i < MAX_GAMES; i++)
+        games[i] = empty_game;
+    return;
+}
+
 int main(int argc, char *args[])
 {
     if (argc < 3)
@@ -436,88 +521,20 @@ int main(int argc, char *args[])
     unix_socket_path = args[2];
 
     srand(time(NULL));
+    int waiting_client_fd = 0, epoll;
     args_t thread_args;
-    thread_args.waiting_client_fd = 0;
-
-    // client_t clients[MAX_CLIENT];
-    // game_t games[MAX_GAMES];
-
-    client_t empty_client;
-    empty_client.fd = 0;
-    empty_client.paired_fd = 0;
-    empty_client.game_id = -1;
-    empty_client.name[0] = '\0';
-    empty_client.has_ping_responded = 1;
-    for (int i = 0; i < MAX_CLIENT; i++)
-        thread_args.clients[i] = empty_client;
-
-    game_t empty_game;
-    strcpy(empty_game.board, "         ");
-    empty_game.has_started = 0;
-    empty_game.moving_side = 'X';
-    for (int i = 0; i < MAX_GAMES; i++)
-        thread_args.games[i] = empty_game;
-
-    int server_socket = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);
-    if (server_socket == -1)
-    {
-        perror("socket");
-        return EXIT_FAILURE;
-    }
-
-    int opt = 1;
-
-    if (setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt)) == -1)
-    {
-        perror("setsockopt");
-        return EXIT_FAILURE;
-    }
-
-    struct sockaddr_in address;
-    address.sin_family = AF_INET;
-    address.sin_addr.s_addr = INADDR_ANY;
-    address.sin_port = htons(port);
-
-    if (bind(server_socket, (struct sockaddr *)&address, sizeof(address)) == -1)
-    {
-        perror("bind");
-        return EXIT_FAILURE;
-    }
-
-    if (listen(server_socket, CONNECTION_QUEUE_SIZE) == -1)
-    {
-        perror("listen");
-        return EXIT_FAILURE;
-    }
-
-    int unix_server_socket = socket(AF_UNIX, SOCK_STREAM | SOCK_NONBLOCK, 0);
-    if (unix_server_socket == -1)
-    {
-        perror("unix socket");
-        return EXIT_FAILURE;
-    }
-
-    struct sockaddr_un server_unix_address;
-    server_unix_address.sun_family = AF_UNIX;
-    strcpy(server_unix_address.sun_path, unix_socket_path);
-
-    if (bind(unix_server_socket, (struct sockaddr *)&server_unix_address, sizeof(server_unix_address)) == -1)
-    {
-        perror("unix bind");
-        return EXIT_FAILURE;
-    }
-
-    if (listen(unix_server_socket, CONNECTION_QUEUE_SIZE) == -1)
-    {
-        perror("unix listen");
-        return EXIT_FAILURE;
-    }
-
+    thread_args.waiting_client_fd = &waiting_client_fd;
+    thread_args.epoll = &epoll;
+    init_client(thread_args.clients);
+    init_games(thread_args.games);
     signal(SIGINT, safe_exit);
 
-    pthread_t pinging_thread;
-    pthread_create(&pinging_thread, NULL, pinging_thread_routine, (void *)&thread_args);
+    // =================================
 
-    start_event_loop(server_socket, unix_server_socket, &thread_args.waiting_client_fd, thread_args.clients, thread_args.games);
+    int server_socket, unix_server_socket;
+    if (full_init(&port, &server_socket, &unix_server_socket, &thread_args) == EXIT_FAILURE)
+        return EXIT_FAILURE;
+
+    start_event_loop(server_socket, unix_server_socket, &thread_args);
     return EXIT_SUCCESS;
 }
