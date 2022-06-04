@@ -163,7 +163,7 @@ int create_game(int client_fd, int other_client_fd, game_t *games)
     return -1;
 }
 
-void make_move(int game_id, int field_index, game_t *games)
+void take_action(int game_id, int field_index, game_t *games)
 {
     if (games[game_id].board[field_index - 1] != ' ')
         return;
@@ -180,31 +180,38 @@ void make_move(int game_id, int field_index, game_t *games)
 char game_status(int game_id, game_t *games)
 {
     char *board = games[game_id].board;
-    for (int i = 0; i < 3; i++)
-    {
-        // check columns
-        if (board[i] != ' ' && board[i] == board[i + 3] && board[i + 3] == board[i + 6])
-            return board[i];
-        // check rows
-        if (board[3 * i] != ' ' && board[3 * i] == board[3 * i + 1] && board[3 * i] == board[3 * i + 2])
-            return board[3 * i];
-    }
+
     // diagonals
     if (board[0] != ' ' && board[0] == board[4] && board[4] == board[8])
         return board[0];
+
     if (board[2] != ' ' && board[2] == board[4] && board[4] == board[6])
         return board[2];
+
+    for (int i = 0; i < 3; i++)
+    {
+        // rows
+        if (board[3 * i] != ' ' && board[3 * i] == board[3 * i + 1] && board[3 * i] == board[3 * i + 2])
+            return board[3 * i];
+
+        // columns
+        if (board[i] != ' ' && board[i] == board[i + 3] && board[i + 3] == board[i + 6])
+            return board[i];
+    }
+
+    // game in progress
     for (int i = 0; i < 9; i++)
         if (board[i] == ' ')
-            return ' '; // no winner
+            return ' ';
 
-    return 'D'; // draw
+    // draw
+    return 'D';
 }
 
-void read_from_socket(int client_fd, args_t *args)
+void read_socket(int client_fd, args_t *args)
 {
-    char buffer[1001];
-    int read_bytes_count = recv(client_fd, buffer, 1000, 0);
+    char buf[1001];
+    int read_bytes_count = recv(client_fd, buf, 1000, 0);
 
     if (read_bytes_count == 0)
     {
@@ -212,14 +219,14 @@ void read_from_socket(int client_fd, args_t *args)
         return;
     }
 
-    buffer[read_bytes_count] = '\0';
-    printf("received message from client %d: %s\n", client_fd, buffer);
+    buf[read_bytes_count] = '\0';
+    printf("client %d: %s\n", client_fd, buf);
 
-    if (strncmp(buffer, "NAME: ", strlen("NAME: ")) == 0)
+    if (strncmp(buf, "NAME: ", strlen("NAME: ")) == 0)
     {
-        if (set_client_name(client_fd, buffer + strlen("NAME: "), args->clients) == -1)
+        if (set_client_name(client_fd, buf + strlen("NAME: "), args->clients) == -1)
         {
-            char *message = "This name is already taken";
+            char *message = "Taken name - choose different";
             if (send(client_fd, message, strlen(message), 0) == -1)
             {
                 remove_client(client_fd, 0, args);
@@ -259,9 +266,9 @@ void read_from_socket(int client_fd, args_t *args)
                 
             message[message_length] = '\0';
             if (args->games[game_id].player_x == *args->waiting_client_fd)
-                strcat(message, "\nPlaying with X\n");
+                strcat(message, "Your sign is: X\n");
             else
-                strcat(message, "\nPlaying with O\n");
+                strcat(message, "Your sign is: O\n");
 
             if (send(*args->waiting_client_fd, message, strlen(message), 0) == -1)
             {
@@ -274,7 +281,7 @@ void read_from_socket(int client_fd, args_t *args)
             *args->waiting_client_fd = client_fd;
     }
 
-    if (strcmp(buffer, "PONG") == 0)
+    if (strcmp(buf, "resp_") == 0)
     {
         for (int i = 0; i < MAX_CLI_NUM; i++)
         {
@@ -286,20 +293,21 @@ void read_from_socket(int client_fd, args_t *args)
         }
     }
 
-    if (strncmp(buffer, "MOVE: ", strlen("MOVE: ")) == 0)
+    if (strncmp(buf, "turn: ", strlen("turn: ")) == 0)
     {
         int field_index;
-        sscanf(buffer, "MOVE: %d", &field_index);
+        sscanf(buf, "turn: %d", &field_index);
         for (int i = 0; i < MAX_CLI_NUM; i++)
         {
             if (args->clients[i].fd == client_fd)
             {
-                int game_id = args->clients[i].game_id;
-                int opponent_fd = args->clients[i].paired_fd;
+                int game_id = args->clients[i].game_id, opponent_fd = args->clients[i].paired_fd;
                 if (args->games[game_id].moving_side == 'X' && args->games[game_id].player_x == client_fd)
-                    make_move(game_id, field_index, args->games);
+                    take_action(game_id, field_index, args->games);
+
                 if (args->games[game_id].moving_side == 'O' && args->games[game_id].player_o == client_fd)
-                    make_move(game_id, field_index, args->games);
+                    take_action(game_id, field_index, args->games);
+
                 char winner = game_status(game_id, args->games);
                 char message[1000];
                 print_board(game_id, message, args->games);
@@ -360,7 +368,7 @@ void handle_event(int server_socket, int unix_socket, struct epoll_event *event,
 
     int client_fd = event->data.fd;
     if (event->events & EPOLLIN)
-        read_from_socket(client_fd, args);
+        read_socket(client_fd, args);
 
     if (event->events & EPOLLHUP)
         remove_client(client_fd, 1, args);
@@ -425,7 +433,7 @@ void *play_t_routine(void *arg)
                 }
                 else
                 {
-                    char *message = "PING";
+                    char *message = "requ_";
                     send(args->clients[i].fd, message, strlen(message), 0);
                 }
             }

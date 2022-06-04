@@ -29,7 +29,7 @@ void handle_event(int client_socket, struct epoll_event *event, int epoll, int *
             printf("Your move\n");
             return;
         }
-        char message[100] = "MOVE: ";
+        char message[100] = "turn: ";
         strcat(message, buffer);
         send(client_socket, message, strlen(message), 0);
         *is_client_turn = !*is_client_turn;
@@ -41,9 +41,9 @@ void handle_event(int client_socket, struct epoll_event *event, int epoll, int *
         if (read_bytes_count == 0)
             exit(EXIT_SUCCESS);
         buffer[read_bytes_count] = '\0';
-        if (strncmp(buffer, "PING", 4) == 0)
+        if (strncmp(buffer, "requ_", 4) == 0)
         {
-            char *message = "PONG";
+            char *message = "resp_";
             send(client_socket, message, strlen(message), 0);
         }
         else if (strncmp(buffer, "BOARD:\n", strlen("BOARD:\n")) == 0)
