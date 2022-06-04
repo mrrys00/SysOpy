@@ -5,12 +5,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
-#include <unistd.h>
 #include <sys/epoll.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <sys/un.h>
+#include <time.h>
+#include <unistd.h>
 
 #include "config.h"
 
@@ -23,11 +23,8 @@ void safe_exit(int signal_number)
     exit(EXIT_SUCCESS);
 }
 
-// CLIENTS SECTION
-
 void connect_client(int client_fd, int *epoll, client_t *clients)
-{   
-    // epoll is a Linux kernel system call for a scalable I/O event notification mechanism
+{
     struct epoll_event client_event;
     client_event.events = EPOLLIN;
     client_event.data.fd = client_fd;
@@ -48,36 +45,29 @@ void connect_client(int client_fd, int *epoll, client_t *clients)
     }
     return;
 }
-int set_client_name(int client_fd, char *name, client_t *clients)
+
+void remove_game(int game_index, game_t *games)
 {
-    for (int i = 0; i < MAX_CLI_NUM; i++)
-        if (strcmp(clients[i].name, name) == 0)
-            return -1;
-
-    for (int i = 0; i < MAX_CLI_NUM; i++)
-    {
-        if (clients[i].fd == client_fd)
-        {
-            strcpy(clients[i].name, name);
-            return 0;
-        }
-    }
-    return -1;
-}
-void accept_connection(int server_socket, int *epoll, client_t *clients)
-{
-    int client_fd = accept4(server_socket, NULL, NULL, SOCK_NONBLOCK);
-
-    if (client_fd == -1)
-    {
-        perror("accept");
-        exit(EXIT_FAILURE);
-    }
-
-    connect_client(client_fd, epoll, clients);
-    printf("client with fd %d connected\n", client_fd);
+    strcpy(games[game_index].board, "         ");
+    games[game_index].has_started = 0;
+    games[game_index].moving_side = 'X';
     return;
 }
+
+void print_board(int game_id, char *res, game_t *games)
+{
+    res[0] = '\0';
+    strcat(res, "BOARD:\n");
+    char *board = games[game_id].board;
+    char row[21];
+    for (int i = 0; i < 3; i++)
+    {
+        sprintf(row, "%c | %c | %c\n---------\n", board[i * 3], board[i * 3 + 1], board[i * 3 + 2]);
+        strcat(res, row);
+    }
+    return;
+}
+
 void remove_client(int client_fd, int remove_paired_client, args_t *args)
 {
     printf("removing client %d\n", client_fd);
@@ -118,9 +108,37 @@ void remove_client(int client_fd, int remove_paired_client, args_t *args)
     return;
 }
 
-// END CLIENTS SECTION
+int set_client_name(int client_fd, char *name, client_t *clients)
+{
+    for (int i = 0; i < MAX_CLI_NUM; i++)
+        if (strcmp(clients[i].name, name) == 0)
+            return -1;
 
-// GAME SECTION
+    for (int i = 0; i < MAX_CLI_NUM; i++)
+    {
+        if (clients[i].fd == client_fd)
+        {
+            strcpy(clients[i].name, name);
+            return 0;
+        }
+    }
+    return -1;
+}
+
+void accept_connection(int server_socket, int *epoll, client_t *clients)
+{
+    int client_fd = accept4(server_socket, NULL, NULL, SOCK_NONBLOCK);
+
+    if (client_fd == -1)
+    {
+        perror("accept");
+        exit(EXIT_FAILURE);
+    }
+
+    connect_client(client_fd, epoll, clients);
+    printf("client with fd %d connected\n", client_fd);
+    return;
+}
 
 int create_game(int client_fd, int other_client_fd, game_t *games)
 {
@@ -144,6 +162,7 @@ int create_game(int client_fd, int other_client_fd, game_t *games)
     }
     return -1;
 }
+
 void make_move(int game_id, int field_index, game_t *games)
 {
     if (games[game_id].board[field_index - 1] != ' ')
@@ -157,25 +176,7 @@ void make_move(int game_id, int field_index, game_t *games)
 
     return;
 };
-void remove_game(int game_index, game_t *games)
-{
-    strcpy(games[game_index].board, "         ");
-    games[game_index].has_started = 0;
-    games[game_index].moving_side = 'X';
-    return;
-}
-void print_board(int game_id, char *res, game_t *games)
-{
-    res[0] = '\0';
-    char *board = games[game_id].board;
-    char row[21];
-    for (int i = 0; i < 3; i++)
-    {
-        sprintf(row, "%c%c%c\n", board[i * 3], board[i * 3 + 1], board[i * 3 + 2]);
-        strcat(res, row);
-    }
-    return;
-}
+
 char game_status(int game_id, game_t *games)
 {
     char *board = games[game_id].board;
@@ -199,10 +200,6 @@ char game_status(int game_id, game_t *games)
 
     return 'D'; // draw
 }
-
-// END GAME SECTION
-
-// THREADS / EVENTS SECTION
 
 void read_from_socket(int client_fd, args_t *args)
 {
@@ -346,6 +343,7 @@ void read_from_socket(int client_fd, args_t *args)
 
     return;
 }
+
 void handle_event(int server_socket, int unix_socket, struct epoll_event *event, args_t *args)
 {
     if (event->data.fd == server_socket)
@@ -369,6 +367,7 @@ void handle_event(int server_socket, int unix_socket, struct epoll_event *event,
     
     return;
 }
+
 void start_event_loop(int server_socket, int unix_server_socket, args_t *args)
 {
     *args->epoll = epoll_create1(0);
@@ -405,6 +404,7 @@ void start_event_loop(int server_socket, int unix_server_socket, args_t *args)
     }
     return;
 }
+
 void *play_t_routine(void *arg)
 {
     args_t *args = (args_t *)arg;
@@ -435,10 +435,6 @@ void *play_t_routine(void *arg)
     return NULL;
 }
 
-// END THREADS / EVENTS SECTION
-
-// INIT SECTION
-
 int full_init(int *port, int *server_socket, int *unix_server_socket, args_t *args)
 {
     *server_socket = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);
@@ -466,7 +462,7 @@ int full_init(int *port, int *server_socket, int *unix_server_socket, args_t *ar
         return EXIT_FAILURE;
     }
 
-    if (listen(*server_socket, MAX_Q_CONN) == -1)
+    if (listen(*server_socket, CONNECTION_QUEUE_SIZE) == -1)
     {
         perror("socket listening error: ");
         return EXIT_FAILURE;
@@ -489,7 +485,7 @@ int full_init(int *port, int *server_socket, int *unix_server_socket, args_t *ar
         return EXIT_FAILURE;
     }
 
-    if (listen(*unix_server_socket, MAX_Q_CONN) == -1)
+    if (listen(*unix_server_socket, CONNECTION_QUEUE_SIZE) == -1)
     {
         perror("unix server listening error: ");
         return EXIT_FAILURE;
@@ -500,6 +496,7 @@ int full_init(int *port, int *server_socket, int *unix_server_socket, args_t *ar
 
     return 0;
 }
+
 void init_client(client_t clients[])
 {
     client_t _client;
@@ -508,26 +505,21 @@ void init_client(client_t clients[])
     _client.game_id = -1;
     _client.name[0] = '\0';
     _client.has_ping_responded = 1;
-
     for (int i = 0; i < MAX_CLI_NUM; i++)
         clients[i] = _client;
-
     return;
 }
+
 void init_game(game_t games[])
 {
     game_t _game;
     strcpy(_game.board, "         ");
     _game.has_started = 0;
     _game.moving_side = 'X';
-
     for (int i = 0; i < MAX_GAMES; i++)
         games[i] = _game;
-
     return;
 }
-
-// END INIT SECTION
 
 int main(int argc, char *args[])
 {

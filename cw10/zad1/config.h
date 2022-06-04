@@ -2,7 +2,7 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
-#define MAX_Q_CONN 1024
+#define CONNECTION_QUEUE_SIZE 1024
 #define EPOLL_EVENTS_SIZE 20
 #define MAX_CLI_NUM 2048
 #define MAX_GAMES MAX_CLI_NUM / 2
