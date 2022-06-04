@@ -125,9 +125,9 @@ int set_client_name(int client_fd, char *name, client_t *clients)
     return -1;
 }
 
-void accept_connection(int server_socket, int *epoll, client_t *clients)
+void accept_connection(int serv_sock, int *epoll, client_t *clients)
 {
-    int client_fd = accept4(server_socket, NULL, NULL, SOCK_NONBLOCK);
+    int client_fd = accept4(serv_sock, NULL, NULL, SOCK_NONBLOCK);
 
     if (client_fd == -1)
     {
@@ -356,11 +356,11 @@ void read_socket(int client_fd, args_t *args)
     return;
 }
 
-void event_handling(int server_socket, int unix_socket, struct epoll_event *event, args_t *args)
+void event_handling(int serv_sock, int unix_socket, struct epoll_event *event, args_t *args)
 {
-    if (event->data.fd == server_socket)
+    if (event->data.fd == serv_sock)
     {
-        accept_connection(server_socket, args->epoll, args->clients);
+        accept_connection(serv_sock, args->epoll, args->clients);
         return;
     }
 
@@ -380,20 +380,20 @@ void event_handling(int server_socket, int unix_socket, struct epoll_event *even
     return;
 }
 
-void event_init(int server_socket, int unix_server_socket, args_t *args)
+void event_init(int serv_sock, int unix_sock, args_t *args)
 {
     *args->epoll = epoll_create1(0);
     struct epoll_event server_event;
     server_event.events = EPOLLIN;
-    server_event.data.fd = server_socket;
-    if (epoll_ctl(*args->epoll, EPOLL_CTL_ADD, server_socket, &server_event) == -1)
+    server_event.data.fd = serv_sock;
+    if (epoll_ctl(*args->epoll, EPOLL_CTL_ADD, serv_sock, &server_event) == -1)
     {
         perror("epoll_ctl error ");
         exit(EXIT_FAILURE);
     }
 
-    server_event.data.fd = unix_server_socket;
-    if (epoll_ctl(*args->epoll, EPOLL_CTL_ADD, unix_server_socket, &server_event) == -1)
+    server_event.data.fd = unix_sock;
+    if (epoll_ctl(*args->epoll, EPOLL_CTL_ADD, unix_sock, &server_event) == -1)
     {
         perror("epoll_ctl error");
         exit(EXIT_FAILURE);
@@ -412,7 +412,7 @@ void event_init(int server_socket, int unix_server_socket, args_t *args)
         
         pthread_mutex_lock(&socket_mutex);
         for (int i = 0; i < events_count; i++)
-            event_handling(server_socket, unix_server_socket, &events[i], args);
+            event_handling(serv_sock, unix_sock, &events[i], args);
     }
     return;
 }
@@ -447,17 +447,17 @@ void *play_t_routine(void *arg)
     return NULL;
 }
 
-int full_init(int *port, int *server_socket, int *unix_server_socket, args_t *args)
+int full_init(int *port, int *serv_sock, int *unix_sock, args_t *args)
 {
-    *server_socket = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);
-    if (*server_socket == -1)
+    *serv_sock = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);
+    if (*serv_sock == -1)
     {
         perror("socket error");
         return EXIT_FAILURE;
     }
 
     int opt = 1;
-    if (setsockopt(*server_socket, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt)) == -1)
+    if (setsockopt(*serv_sock, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt)) == -1)
     {
         perror("setsockopt error");
         return EXIT_FAILURE;
@@ -468,20 +468,20 @@ int full_init(int *port, int *server_socket, int *unix_server_socket, args_t *ar
     address.sin_addr.s_addr = INADDR_ANY;
     address.sin_port = htons(*port);
 
-    if (bind(*server_socket, (struct sockaddr *)&address, sizeof(address)) == -1)
+    if (bind(*serv_sock, (struct sockaddr *)&address, sizeof(address)) == -1)
     {
         perror("socket binding error: ");
         return EXIT_FAILURE;
     }
 
-    if (listen(*server_socket, CONNECTION_QUEUE_SIZE) == -1)
+    if (listen(*serv_sock, CONNECTION_QUEUE_SIZE) == -1)
     {
         perror("socket listening error: ");
         return EXIT_FAILURE;
     }
 
-    *unix_server_socket = socket(AF_UNIX, SOCK_STREAM | SOCK_NONBLOCK, 0);
-    if (*unix_server_socket == -1)
+    *unix_sock = socket(AF_UNIX, SOCK_STREAM | SOCK_NONBLOCK, 0);
+    if (*unix_sock == -1)
     {
         perror("unix server socket error ");
         return EXIT_FAILURE;
@@ -491,13 +491,13 @@ int full_init(int *port, int *server_socket, int *unix_server_socket, args_t *ar
     server_unix_address.sun_family = AF_UNIX;
     strcpy(server_unix_address.sun_path, unix_socket_path);
 
-    if (bind(*unix_server_socket, (struct sockaddr *)&server_unix_address, sizeof(server_unix_address)) == -1)
+    if (bind(*unix_sock, (struct sockaddr *)&server_unix_address, sizeof(server_unix_address)) == -1)
     {
         perror("unix server binding error:");
         return EXIT_FAILURE;
     }
 
-    if (listen(*unix_server_socket, CONNECTION_QUEUE_SIZE) == -1)
+    if (listen(*unix_sock, CONNECTION_QUEUE_SIZE) == -1)
     {
         perror("unix server listening error: ");
         return EXIT_FAILURE;
@@ -552,10 +552,10 @@ int main(int argc, char *args[])
     init_game(thread_args.games);
     signal(SIGINT, safe_exit);
 
-    int server_socket, unix_server_socket;
-    if (full_init(&port, &server_socket, &unix_server_socket, &thread_args) == EXIT_FAILURE)
+    int serv_sock, unix_sock;
+    if (full_init(&port, &serv_sock, &unix_sock, &thread_args) == EXIT_FAILURE)
         return EXIT_FAILURE;
 
-    event_init(server_socket, unix_server_socket, &thread_args);
+    event_init(serv_sock, unix_sock, &thread_args);
     return EXIT_SUCCESS;
 }
