@@ -222,9 +222,9 @@ void read_socket(int client_fd, args_t *args)
     buf[read_bytes_count] = '\0';
     printf("client %d: %s\n", client_fd, buf);
 
-    if (strncmp(buf, "NAME: ", strlen("NAME: ")) == 0)
+    if (strncmp(buf, "CLI_NAME: ", strlen("CLI_NAME: ")) == 0)
     {
-        if (set_client_name(client_fd, buf + strlen("NAME: "), args->clients) == -1)
+        if (set_client_name(client_fd, buf + strlen("CLI_NAME: "), args->clients) == -1)
         {
             char *message = "Taken name - choose different";
             if (send(client_fd, message, strlen(message), 0) == -1)
@@ -312,15 +312,17 @@ void read_socket(int client_fd, args_t *args)
                 char message[1000];
                 print_board(game_id, message, args->games);
                 char client_side = args->games[game_id].player_x == client_fd ? 'X' : 'O';
+
                 if (winner == 'D')
                     strcat(message, "\nDRAW!");
+
                 int message_length = strlen(message);
                 if (winner == 'X' || winner == 'O')
                 {
                     if (client_side == winner)
-                        strcat(message, "\nYOU WON!");
+                        strcat(message, "\nWON!");
                     else
-                        strcat(message, "\nYOU LOST!");
+                        strcat(message, "\nLOST!");
                 }
 
                 if (send(client_fd, message, strlen(message), 0) == -1)
@@ -328,14 +330,16 @@ void read_socket(int client_fd, args_t *args)
                     remove_client(client_fd, 1, args);
                     return;
                 }
+
                 message[message_length] = '\0';
                 if (winner == 'X' || winner == 'O')
                 {
                     if (client_side == winner)
-                        strcat(message, "\nYOU LOST!");
+                        strcat(message, "\nLOST!");
                     else
-                        strcat(message, "\nYOU WON!");
+                        strcat(message, "\nWON!");
                 }
+                
                 if (send(opponent_fd, message, strlen(message), 0) == -1)
                 {
                     remove_client(opponent_fd, 1, args);
@@ -448,14 +452,14 @@ int full_init(int *port, int *server_socket, int *unix_server_socket, args_t *ar
     *server_socket = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);
     if (*server_socket == -1)
     {
-        perror("socket");
+        perror("socket error");
         return EXIT_FAILURE;
     }
 
     int opt = 1;
     if (setsockopt(*server_socket, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt)) == -1)
     {
-        perror("setsockopt");
+        perror("setsockopt error");
         return EXIT_FAILURE;
     }
 

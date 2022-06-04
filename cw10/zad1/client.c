@@ -40,6 +40,7 @@ void handle_event(int client_socket, struct epoll_event *event, int epoll, int *
         int read_bytes_count = recv(client_socket, buffer, 1000, 0);
         if (read_bytes_count == 0)
             exit(EXIT_SUCCESS);
+
         buffer[read_bytes_count] = '\0';
         if (strncmp(buffer, "requ_", 4) == 0)
         {
@@ -52,6 +53,7 @@ void handle_event(int client_socket, struct epoll_event *event, int epoll, int *
                 *is_client_turn = !*is_client_turn;
             else
                 *should_change_player_turn = 1;
+
             printf("\n%s\n", buffer);
             if (*playing_side == ' ')
             {
@@ -151,7 +153,7 @@ int full_init(char *name, char *connection_mode, char *address, int *client_sock
         exit(EXIT_FAILURE);
     }
 
-    char message[1000] = "NAME: ";
+    char message[1000] = "CLI_NAME: ";
     strcat(message, name);
     send(*client_socket, message, strlen(message), 0);
 
