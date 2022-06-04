@@ -18,7 +18,7 @@ void safe_exit(int signal_number)
     exit(EXIT_SUCCESS);
 }
 
-void handle_event(int client_socket, struct epoll_event *event, int epoll, int *is_client_turn, int *should_change_player_turn, char *playing_side)
+void event_handling(int client_socket, struct epoll_event *event, int epoll, int *is_client_turn, int *should_change_player_turn, char *playing_side)
 {
     char buffer[1025];
     if (event->data.fd == STDIN_FILENO)
@@ -188,7 +188,7 @@ int main(int argc, char *args[])
         }
 
         for (int i = 0; i < events_count; i++)
-            handle_event(client_socket, &events[i], epoll, &is_client_turn, &should_change_player_turn, &playing_side);
+            event_handling(client_socket, &events[i], epoll, &is_client_turn, &should_change_player_turn, &playing_side);
     }
 
     return EXIT_SUCCESS;

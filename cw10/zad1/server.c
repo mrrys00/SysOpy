@@ -46,7 +46,7 @@ void connect_client(int client_fd, int *epoll, client_t *clients)
     return;
 }
 
-void remove_game(int game_index, game_t *games)
+void clean_game(int game_index, game_t *games)
 {
     strcpy(games[game_index].board, "         ");
     games[game_index].has_started = 0;
@@ -68,9 +68,9 @@ void print_board(int game_id, char *res, game_t *games)
     return;
 }
 
-void remove_client(int client_fd, int remove_paired_client, args_t *args)
+void clean_client(int client_fd, int remove_paired_client, args_t *args)
 {
-    printf("removing client %d\n", client_fd);
+    printf("clean client %d\n", client_fd);
     if (epoll_ctl(*args->epoll, EPOLL_CTL_DEL, client_fd, NULL) == -1)
     {
         perror("epoll_ctl remove");
@@ -83,8 +83,8 @@ void remove_client(int client_fd, int remove_paired_client, args_t *args)
         {
             if (args->clients[i].paired_fd != 0 && remove_paired_client)
             {
-                remove_game(args->clients[i].game_id, args->games);
-                remove_client(args->clients[i].paired_fd, 0, args);
+                clean_game(args->clients[i].game_id, args->games);
+                clean_client(args->clients[i].paired_fd, 0, args);
             }
             args->clients[i].fd = 0;
             args->clients[i].name[0] = '\0';
@@ -215,7 +215,7 @@ void read_socket(int client_fd, args_t *args)
 
     if (read_bytes_count == 0)
     {
-        remove_client(client_fd, 1, args);
+        clean_client(client_fd, 1, args);
         return;
     }
 
@@ -229,10 +229,10 @@ void read_socket(int client_fd, args_t *args)
             char *message = "Taken name - choose different";
             if (send(client_fd, message, strlen(message), 0) == -1)
             {
-                remove_client(client_fd, 0, args);
+                clean_client(client_fd, 0, args);
                 return;
             }
-            remove_client(client_fd, 0, args);
+            clean_client(client_fd, 0, args);
         }
         else if (*args->waiting_client_fd != 0)
         {
@@ -260,7 +260,7 @@ void read_socket(int client_fd, args_t *args)
 
             if (send(client_fd, message, strlen(message), 0) == -1)
             {
-                remove_client(client_fd, 1, args);
+                clean_client(client_fd, 1, args);
                 return;
             }
                 
@@ -272,7 +272,7 @@ void read_socket(int client_fd, args_t *args)
 
             if (send(*args->waiting_client_fd, message, strlen(message), 0) == -1)
             {
-                remove_client(*args->waiting_client_fd, 1, args);
+                clean_client(*args->waiting_client_fd, 1, args);
                 return;
             }
             *args->waiting_client_fd = 0;
@@ -327,7 +327,7 @@ void read_socket(int client_fd, args_t *args)
 
                 if (send(client_fd, message, strlen(message), 0) == -1)
                 {
-                    remove_client(client_fd, 1, args);
+                    clean_client(client_fd, 1, args);
                     return;
                 }
 
@@ -339,15 +339,15 @@ void read_socket(int client_fd, args_t *args)
                     else
                         strcat(message, "\nWON!");
                 }
-                
+
                 if (send(opponent_fd, message, strlen(message), 0) == -1)
                 {
-                    remove_client(opponent_fd, 1, args);
+                    clean_client(opponent_fd, 1, args);
                     return;
                 }
 
                 if (winner != ' ')
-                    remove_client(client_fd, 1, args);
+                    clean_client(client_fd, 1, args);
                 break;
             }
         }
@@ -356,7 +356,7 @@ void read_socket(int client_fd, args_t *args)
     return;
 }
 
-void handle_event(int server_socket, int unix_socket, struct epoll_event *event, args_t *args)
+void event_handling(int server_socket, int unix_socket, struct epoll_event *event, args_t *args)
 {
     if (event->data.fd == server_socket)
     {
@@ -375,12 +375,12 @@ void handle_event(int server_socket, int unix_socket, struct epoll_event *event,
         read_socket(client_fd, args);
 
     if (event->events & EPOLLHUP)
-        remove_client(client_fd, 1, args);
+        clean_client(client_fd, 1, args);
     
     return;
 }
 
-void start_event_loop(int server_socket, int unix_server_socket, args_t *args)
+void event_init(int server_socket, int unix_server_socket, args_t *args)
 {
     *args->epoll = epoll_create1(0);
     struct epoll_event server_event;
@@ -412,7 +412,7 @@ void start_event_loop(int server_socket, int unix_server_socket, args_t *args)
         
         pthread_mutex_lock(&socket_mutex);
         for (int i = 0; i < events_count; i++)
-            handle_event(server_socket, unix_server_socket, &events[i], args);
+            event_handling(server_socket, unix_server_socket, &events[i], args);
     }
     return;
 }
@@ -422,7 +422,7 @@ void *play_t_routine(void *arg)
     args_t *args = (args_t *)arg;
     while (1)
     {
-        sleep(15);
+        sleep(5);
         pthread_mutex_lock(&socket_mutex);
         for (int i = 0; i < MAX_CLI_NUM; i++)
         {
@@ -431,9 +431,9 @@ void *play_t_routine(void *arg)
                 if (!args->clients[i].has_ping_responded)
                 {
                     if (args->clients[i].paired_fd != 0)
-                        remove_client(args->clients[i].fd, 1, args);
+                        clean_client(args->clients[i].fd, 1, args);
                     else
-                        remove_client(args->clients[i].fd, 0, args);
+                        clean_client(args->clients[i].fd, 0, args);
                 }
                 else
                 {
@@ -552,12 +552,10 @@ int main(int argc, char *args[])
     init_game(thread_args.games);
     signal(SIGINT, safe_exit);
 
-    // =================================
-
     int server_socket, unix_server_socket;
     if (full_init(&port, &server_socket, &unix_server_socket, &thread_args) == EXIT_FAILURE)
         return EXIT_FAILURE;
 
-    start_event_loop(server_socket, unix_server_socket, &thread_args);
+    event_init(server_socket, unix_server_socket, &thread_args);
     return EXIT_SUCCESS;
 }
