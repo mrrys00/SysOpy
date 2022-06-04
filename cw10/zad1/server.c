@@ -13,7 +13,6 @@
 #include <pthread.h>
 #include "config.h"
 
-
 pthread_mutex_t socket_mutex = PTHREAD_MUTEX_INITIALIZER;
 char *unix_socket_path;
 
@@ -31,11 +30,11 @@ void connect_client(int client_fd, int *epoll, client_t *clients)
 
     if (epoll_ctl(*epoll, EPOLL_CTL_ADD, client_fd, &client_event) == -1)
     {
-        perror("epoll_ctl add");
+        perror("error epoll_ctl add");
         exit(EXIT_FAILURE);
     }
 
-    for (int i = 0; i < MAX_CLIENT; i++)
+    for (int i = 0; i < MAX_CLI_NUM; i++)
     {
         if (clients[i].fd == 0)
         {
@@ -51,43 +50,44 @@ void remove_game(int game_index, game_t *games)
     strcpy(games[game_index].board, "         ");
     games[game_index].has_started = 0;
     games[game_index].moving_side = 'X';
+    return;
 }
 
-void game_to_string(int game_id, char *result, game_t *games)
+void print_board(int game_id, char *res, game_t *games)
 {
-    result[0] = '\0';
-    strcat(result, "BOARD:\n");
+    res[0] = '\0';
     char *board = games[game_id].board;
     char row[21];
     for (int i = 0; i < 3; i++)
     {
-        sprintf(row, "%c | %c | %c\n---------\n", board[i * 3], board[i * 3 + 1], board[i * 3 + 2]);
-        strcat(result, row);
+        sprintf(row, "%c%c%c\n", board[i * 3], board[i * 3 + 1], board[i * 3 + 2]);
+        strcat(res, row);
     }
+    return;
 }
 
-void remove_client(int client_fd, int *epoll, int remove_paired_client, client_t *clients, game_t *games)
+void remove_client(int client_fd, int remove_paired_client, args_t *args)
 {
     printf("removing client %d\n", client_fd);
-    if (epoll_ctl(*epoll, EPOLL_CTL_DEL, client_fd, NULL) == -1)
+    if (epoll_ctl(*args->epoll, EPOLL_CTL_DEL, client_fd, NULL) == -1)
     {
         perror("epoll_ctl remove");
         exit(EXIT_FAILURE);
     }
 
-    for (int i = 0; i < MAX_CLIENT; i++)
+    for (int i = 0; i < MAX_CLI_NUM; i++)
     {
-        if (clients[i].fd == client_fd)
+        if (args->clients[i].fd == client_fd)
         {
-            if (clients[i].paired_fd != 0 && remove_paired_client)
+            if (args->clients[i].paired_fd != 0 && remove_paired_client)
             {
-                remove_game(clients[i].game_id, games);
-                remove_client(clients[i].paired_fd, epoll, 0, clients, games);
+                remove_game(args->clients[i].game_id, args->games);
+                remove_client(args->clients[i].paired_fd, 0, args);
             }
-            clients[i].fd = 0;
-            clients[i].name[0] = '\0';
-            clients[i].paired_fd = 0;
-            clients[i].game_id = -1;
+            args->clients[i].fd = 0;
+            args->clients[i].name[0] = '\0';
+            args->clients[i].paired_fd = 0;
+            args->clients[i].game_id = -1;
             break;
         }
     }
@@ -103,15 +103,16 @@ void remove_client(int client_fd, int *epoll, int remove_paired_client, client_t
         perror("close");
         exit(EXIT_FAILURE);
     };
+    return;
 }
 
 int set_client_name(int client_fd, char *name, client_t *clients)
 {
-    for (int i = 0; i < MAX_CLIENT; i++)
+    for (int i = 0; i < MAX_CLI_NUM; i++)
         if (strcmp(clients[i].name, name) == 0)
             return -1;
 
-    for (int i = 0; i < MAX_CLIENT; i++)
+    for (int i = 0; i < MAX_CLI_NUM; i++)
     {
         if (clients[i].fd == client_fd)
         {
@@ -134,6 +135,7 @@ void accept_connection(int server_socket, int *epoll, client_t *clients)
 
     connect_client(client_fd, epoll, clients);
     printf("client with fd %d connected\n", client_fd);
+    return;
 }
 
 int create_game(int client_fd, int other_client_fd, game_t *games)
@@ -169,9 +171,11 @@ void make_move(int game_id, int field_index, game_t *games)
         games[game_id].moving_side = 'O';
     else
         games[game_id].moving_side = 'X';
+
+    return;
 };
 
-char check_winner(int game_id, game_t *games)
+char game_status(int game_id, game_t *games)
 {
     char *board = games[game_id].board;
     for (int i = 0; i < 3; i++)
@@ -195,14 +199,14 @@ char check_winner(int game_id, game_t *games)
     return 'D'; // draw
 }
 
-void read_from_socket(int client_fd, int *epoll, int *waiting_client_fd, client_t *clients, game_t *games)
+void read_from_socket(int client_fd, args_t *args)
 {
     char buffer[1001];
     int read_bytes_count = recv(client_fd, buffer, 1000, 0);
 
     if (read_bytes_count == 0)
     {
-        remove_client(client_fd, epoll, 1, clients, games);
+        remove_client(client_fd, 1, args);
         return;
     }
 
@@ -211,70 +215,70 @@ void read_from_socket(int client_fd, int *epoll, int *waiting_client_fd, client_
 
     if (strncmp(buffer, "NAME: ", strlen("NAME: ")) == 0)
     {
-        if (set_client_name(client_fd, buffer + strlen("NAME: "), clients) == -1)
+        if (set_client_name(client_fd, buffer + strlen("NAME: "), args->clients) == -1)
         {
             char *message = "This name is already taken";
             if (send(client_fd, message, strlen(message), 0) == -1)
             {
-                remove_client(client_fd, epoll, 0, clients, games);
+                remove_client(client_fd, 0, args);
                 return;
             }
-            remove_client(client_fd, epoll, 0, clients, games);
+            remove_client(client_fd, 0, args);
         }
-        else if (*waiting_client_fd != 0)
+        else if (*args->waiting_client_fd != 0)
         {
-            int game_id = create_game(*waiting_client_fd, client_fd, games);
-            for (int i = 0; i < MAX_CLIENT; i++)
+            int game_id = create_game(*args->waiting_client_fd, client_fd, args->games);
+            for (int i = 0; i < MAX_CLI_NUM; i++)
             {
-                if (clients[i].fd == *waiting_client_fd)
+                if (args->clients[i].fd == *args->waiting_client_fd)
                 {
-                    clients[i].paired_fd = client_fd;
-                    clients[i].game_id = game_id;
+                    args->clients[i].paired_fd = client_fd;
+                    args->clients[i].game_id = game_id;
                 }
-                if (clients[i].fd == client_fd)
+                if (args->clients[i].fd == client_fd)
                 {
-                    clients[i].paired_fd = *waiting_client_fd;
-                    clients[i].game_id = game_id;
+                    args->clients[i].paired_fd = *args->waiting_client_fd;
+                    args->clients[i].game_id = game_id;
                 }
             }
             char message[1000];
-            game_to_string(game_id, message, games);
+            print_board(game_id, message, args->games);
             int message_length = strlen(message);
-            if (games[game_id].player_x == client_fd)
+            if (args->games[game_id].player_x == client_fd)
                 strcat(message, "\nPlaying with X\n");
             else
                 strcat(message, "\nPlaying with O\n");
 
             if (send(client_fd, message, strlen(message), 0) == -1)
             {
-                remove_client(client_fd, epoll, 1, clients, games);
+                remove_client(client_fd, 1, args);
                 return;
             }
                 
             message[message_length] = '\0';
-            if (games[game_id].player_x == *waiting_client_fd)
+            if (args->games[game_id].player_x == *args->waiting_client_fd)
                 strcat(message, "\nPlaying with X\n");
             else
                 strcat(message, "\nPlaying with O\n");
 
-            if (send(*waiting_client_fd, message, strlen(message), 0) == -1)
+            if (send(*args->waiting_client_fd, message, strlen(message), 0) == -1)
             {
-                remove_client(*waiting_client_fd, epoll, 1, clients, games);
+                remove_client(*args->waiting_client_fd, 1, args);
                 return;
             }
-            *waiting_client_fd = 0;
+            *args->waiting_client_fd = 0;
         }
         else
-            *waiting_client_fd = client_fd;
+            *args->waiting_client_fd = client_fd;
     }
 
     if (strcmp(buffer, "PONG") == 0)
     {
-        for (int i = 0; i < MAX_CLIENT; i++)
+        for (int i = 0; i < MAX_CLI_NUM; i++)
         {
-            if (clients[i].fd == client_fd)
+            if (args->clients[i].fd == client_fd)
             {
-                clients[i].has_ping_responded = 1;
+                args->clients[i].has_ping_responded = 1;
                 break;
             }
         }
@@ -284,20 +288,20 @@ void read_from_socket(int client_fd, int *epoll, int *waiting_client_fd, client_
     {
         int field_index;
         sscanf(buffer, "MOVE: %d", &field_index);
-        for (int i = 0; i < MAX_CLIENT; i++)
+        for (int i = 0; i < MAX_CLI_NUM; i++)
         {
-            if (clients[i].fd == client_fd)
+            if (args->clients[i].fd == client_fd)
             {
-                int game_id = clients[i].game_id;
-                int opponent_fd = clients[i].paired_fd;
-                if (games[game_id].moving_side == 'X' && games[game_id].player_x == client_fd)
-                    make_move(game_id, field_index, games);
-                if (games[game_id].moving_side == 'O' && games[game_id].player_o == client_fd)
-                    make_move(game_id, field_index, games);
-                char winner = check_winner(game_id, games);
+                int game_id = args->clients[i].game_id;
+                int opponent_fd = args->clients[i].paired_fd;
+                if (args->games[game_id].moving_side == 'X' && args->games[game_id].player_x == client_fd)
+                    make_move(game_id, field_index, args->games);
+                if (args->games[game_id].moving_side == 'O' && args->games[game_id].player_o == client_fd)
+                    make_move(game_id, field_index, args->games);
+                char winner = game_status(game_id, args->games);
                 char message[1000];
-                game_to_string(game_id, message, games);
-                char client_side = games[game_id].player_x == client_fd ? 'X' : 'O';
+                print_board(game_id, message, args->games);
+                char client_side = args->games[game_id].player_x == client_fd ? 'X' : 'O';
                 if (winner == 'D')
                     strcat(message, "\nDRAW!");
                 int message_length = strlen(message);
@@ -311,7 +315,7 @@ void read_from_socket(int client_fd, int *epoll, int *waiting_client_fd, client_
 
                 if (send(client_fd, message, strlen(message), 0) == -1)
                 {
-                    remove_client(client_fd, epoll, 1, clients, games);
+                    remove_client(client_fd, 1, args);
                     return;
                 }
                 message[message_length] = '\0';
@@ -324,16 +328,18 @@ void read_from_socket(int client_fd, int *epoll, int *waiting_client_fd, client_
                 }
                 if (send(opponent_fd, message, strlen(message), 0) == -1)
                 {
-                    remove_client(opponent_fd, epoll, 1, clients, games);
+                    remove_client(opponent_fd, 1, args);
                     return;
                 }
 
                 if (winner != ' ')
-                    remove_client(client_fd, epoll, 1, clients, games);
+                    remove_client(client_fd, 1, args);
                 break;
             }
         }
     }
+
+    return;
 }
 
 void handle_event(int server_socket, int unix_socket, struct epoll_event *event, args_t *args)
@@ -352,10 +358,12 @@ void handle_event(int server_socket, int unix_socket, struct epoll_event *event,
 
     int client_fd = event->data.fd;
     if (event->events & EPOLLIN)
-        read_from_socket(client_fd, args->epoll, args->waiting_client_fd, args->clients, args->games);
+        read_from_socket(client_fd, args);
 
     if (event->events & EPOLLHUP)
-        remove_client(client_fd, args->epoll, 1, args->clients, args->games);
+        remove_client(client_fd, 1, args);
+    
+    return;
 }
 
 void start_event_loop(int server_socket, int unix_server_socket, args_t *args)
@@ -366,14 +374,14 @@ void start_event_loop(int server_socket, int unix_server_socket, args_t *args)
     server_event.data.fd = server_socket;
     if (epoll_ctl(*args->epoll, EPOLL_CTL_ADD, server_socket, &server_event) == -1)
     {
-        perror("epoll_ctl");
+        perror("epoll_ctl error ");
         exit(EXIT_FAILURE);
     }
 
     server_event.data.fd = unix_server_socket;
     if (epoll_ctl(*args->epoll, EPOLL_CTL_ADD, unix_server_socket, &server_event) == -1)
     {
-        perror("epoll_ctl");
+        perror("epoll_ctl error");
         exit(EXIT_FAILURE);
     }
 
@@ -384,7 +392,7 @@ void start_event_loop(int server_socket, int unix_server_socket, args_t *args)
         int events_count = epoll_wait(*args->epoll, events, EPOLL_EVENTS_SIZE, -1);
         if (events_count == -1)
         {
-            perror("epoll_wait");
+            perror("epoll_wait error ");
             exit(EXIT_FAILURE);
         }
         
@@ -392,25 +400,26 @@ void start_event_loop(int server_socket, int unix_server_socket, args_t *args)
         for (int i = 0; i < events_count; i++)
             handle_event(server_socket, unix_server_socket, &events[i], args);
     }
+    return;
 }
 
-void *pinging_thread_routine(void *arg)
+void *play_t_routine(void *arg)
 {
     args_t *args = (args_t *)arg;
     while (1)
     {
         sleep(15);
         pthread_mutex_lock(&socket_mutex);
-        for (int i = 0; i < MAX_CLIENT; i++)
+        for (int i = 0; i < MAX_CLI_NUM; i++)
         {
             if (args->clients[i].fd != 0)
             {
                 if (!args->clients[i].has_ping_responded)
                 {
                     if (args->clients[i].paired_fd != 0)
-                        remove_client(args->clients[i].fd, args->epoll, 1, args->clients, args->games);
+                        remove_client(args->clients[i].fd, 1, args);
                     else
-                        remove_client(args->clients[i].fd, args->epoll, 0, args->clients, args->games);
+                        remove_client(args->clients[i].fd, 0, args);
                 }
                 else
                 {
@@ -447,20 +456,20 @@ int full_init(int *port, int *server_socket, int *unix_server_socket, args_t *ar
 
     if (bind(*server_socket, (struct sockaddr *)&address, sizeof(address)) == -1)
     {
-        perror("bind");
+        perror("socket binding error: ");
         return EXIT_FAILURE;
     }
 
-    if (listen(*server_socket, CONNECTION_QUEUE_SIZE) == -1)
+    if (listen(*server_socket, MAX_Q_CONN) == -1)
     {
-        perror("listen");
+        perror("socket listening error: ");
         return EXIT_FAILURE;
     }
 
     *unix_server_socket = socket(AF_UNIX, SOCK_STREAM | SOCK_NONBLOCK, 0);
     if (*unix_server_socket == -1)
     {
-        perror("unix socket");
+        perror("unix server socket error ");
         return EXIT_FAILURE;
     }
 
@@ -470,43 +479,43 @@ int full_init(int *port, int *server_socket, int *unix_server_socket, args_t *ar
 
     if (bind(*unix_server_socket, (struct sockaddr *)&server_unix_address, sizeof(server_unix_address)) == -1)
     {
-        perror("unix bind");
+        perror("unix server binding error:");
         return EXIT_FAILURE;
     }
 
-    if (listen(*unix_server_socket, CONNECTION_QUEUE_SIZE) == -1)
+    if (listen(*unix_server_socket, MAX_Q_CONN) == -1)
     {
-        perror("unix listen");
+        perror("unix server listening error: ");
         return EXIT_FAILURE;
     }
 
     pthread_t pinging_thread;
-    pthread_create(&pinging_thread, NULL, pinging_thread_routine, (void *)&args);
+    pthread_create(&pinging_thread, NULL, play_t_routine, (void *)&args);
 
     return 0;
 }
 
 void init_client(client_t clients[])
 {
-    client_t empty_client;
-    empty_client.fd = 0;
-    empty_client.paired_fd = 0;
-    empty_client.game_id = -1;
-    empty_client.name[0] = '\0';
-    empty_client.has_ping_responded = 1;
-    for (int i = 0; i < MAX_CLIENT; i++)
-        clients[i] = empty_client;
+    client_t _client;
+    _client.fd = 0;
+    _client.paired_fd = 0;
+    _client.game_id = -1;
+    _client.name[0] = '\0';
+    _client.has_ping_responded = 1;
+    for (int i = 0; i < MAX_CLI_NUM; i++)
+        clients[i] = _client;
     return;
 }
 
-void init_games(game_t games[])
+void init_game(game_t games[])
 {
-    game_t empty_game;
-    strcpy(empty_game.board, "         ");
-    empty_game.has_started = 0;
-    empty_game.moving_side = 'X';
+    game_t _game;
+    strcpy(_game.board, "         ");
+    _game.has_started = 0;
+    _game.moving_side = 'X';
     for (int i = 0; i < MAX_GAMES; i++)
-        games[i] = empty_game;
+        games[i] = _game;
     return;
 }
 
@@ -526,7 +535,7 @@ int main(int argc, char *args[])
     thread_args.waiting_client_fd = &waiting_client_fd;
     thread_args.epoll = &epoll;
     init_client(thread_args.clients);
-    init_games(thread_args.games);
+    init_game(thread_args.games);
     signal(SIGINT, safe_exit);
 
     // =================================
