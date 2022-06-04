@@ -18,11 +18,11 @@ typedef struct
 
 typedef struct
 {
-    int     player_x;
-    int     player_o;
+    int     x_player;
+    int     o_player;
     char    board[10];
     char    moving_side;
-    int     has_started;
+    int     was_started;
 } game_t;
 
 typedef struct

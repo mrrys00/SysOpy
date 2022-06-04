@@ -49,7 +49,7 @@ void connect_client(int client_fd, int *epoll, client_t *clients)
 void clean_game(int game_index, game_t *games)
 {
     strcpy(games[game_index].board, "         ");
-    games[game_index].has_started = 0;
+    games[game_index].was_started = 0;
     games[game_index].moving_side = 'X';
     return;
 }
@@ -136,7 +136,7 @@ void accept_connection(int serv_sock, int *epoll, client_t *clients)
     }
 
     connect_client(client_fd, epoll, clients);
-    printf("client with fd %d connected\n", client_fd);
+    printf("client fd %d connected\n", client_fd);
     return;
 }
 
@@ -144,18 +144,18 @@ int create_game(int client_fd, int other_client_fd, game_t *games)
 {
     for (int i = 0; i < MAX_GAMES; i++)
     {
-        if (!games[i].has_started)
+        if (!games[i].was_started)
         {
-            games[i].has_started = 1;
+            games[i].was_started = 1;
             if (rand() % 2)
             {
-                games[i].player_x = client_fd;
-                games[i].player_o = other_client_fd;
+                games[i].x_player = client_fd;
+                games[i].o_player = other_client_fd;
             }
             else
             {
-                games[i].player_x = other_client_fd;
-                games[i].player_o = client_fd;
+                games[i].x_player = other_client_fd;
+                games[i].o_player = client_fd;
             };
             return i;
         }
@@ -253,10 +253,10 @@ void read_socket(int client_fd, args_t *args)
             char message[1000];
             print_board(game_id, message, args->games);
             int message_length = strlen(message);
-            if (args->games[game_id].player_x == client_fd)
-                strcat(message, "\nPlaying with X\nhow to?\ninput numbers:\n123\n456\n789\n");
+            if (args->games[game_id].x_player == client_fd)
+                strcat(message, "\nSign X\nhow to?\ninput numbers:\n123\n456\n789\n");
             else
-                strcat(message, "\nPlaying with O\nhow to?\ninput numbers:\n123\n456\n789\n");
+                strcat(message, "\nSign O\nhow to?\ninput numbers:\n123\n456\n789\n");
 
             if (send(client_fd, message, strlen(message), 0) == -1)
             {
@@ -265,7 +265,7 @@ void read_socket(int client_fd, args_t *args)
             }
                 
             message[message_length] = '\0';
-            if (args->games[game_id].player_x == *args->waiting_client_fd)
+            if (args->games[game_id].x_player == *args->waiting_client_fd)
                 strcat(message, "Your sign is: X\n");
             else
                 strcat(message, "Your sign is: O\n");
@@ -302,16 +302,16 @@ void read_socket(int client_fd, args_t *args)
             if (args->clients[i].fd == client_fd)
             {
                 int game_id = args->clients[i].game_id, opponent_fd = args->clients[i].paired_fd;
-                if (args->games[game_id].moving_side == 'X' && args->games[game_id].player_x == client_fd)
+                if (args->games[game_id].moving_side == 'X' && args->games[game_id].x_player == client_fd)
                     take_action(game_id, field_index, args->games);
 
-                if (args->games[game_id].moving_side == 'O' && args->games[game_id].player_o == client_fd)
+                if (args->games[game_id].moving_side == 'O' && args->games[game_id].o_player == client_fd)
                     take_action(game_id, field_index, args->games);
 
                 char winner = game_status(game_id, args->games);
                 char message[1000];
                 print_board(game_id, message, args->games);
-                char client_side = args->games[game_id].player_x == client_fd ? 'X' : 'O';
+                char client_side = args->games[game_id].x_player == client_fd ? 'X' : 'O';
 
                 if (winner == 'D')
                     strcat(message, "\nDRAW!");
@@ -526,7 +526,7 @@ void init_game(game_t games[])
 {
     game_t _game;
     strcpy(_game.board, "         ");
-    _game.has_started = 0;
+    _game.was_started = 0;
     _game.moving_side = 'X';
     for (int i = 0; i < MAX_GAMES; i++)
         games[i] = _game;
