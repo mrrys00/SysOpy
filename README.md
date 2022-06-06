@@ -65,7 +65,7 @@ tar cvzf ZadloJan-cw01.tar.gz ZadloJan
 
 Proszę nie używać polskich liter ani w nazwie pliku, ani w nazwach plików w archiwum, ani wewnątrz plików.
 
-#### Realizacja zadania
+#### Realizacja zadania 
 
 W każdym wykonywanym zadaniu tworzony program ma obowiązek sprawdzać poprawność przekazywanych do niego parametrów z linii poleceń.
 W zadaniach, które wymagają tworzenia kodu w języku C należy dodatkowo dołączyć odpowiedni makefile, który pozwoli na budowanie zadania (`make` lub `make all`) oraz usuwanie zbędnych plików (`make clean`). Warto też dodać przykładowe wywołania programu (`make test`).
