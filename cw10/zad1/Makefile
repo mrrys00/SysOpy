@@ -1,21 +1,37 @@
 MAKEFLAGS += --no-print-directory
 
 GCCF = gcc -Wall -ggdb -Ofast -pthread
-MAIN = ./zad1
+CLIENT = ./client
+SERVER = ./server
+PORT = 2137 
+SOCKET = socket
+NAME = client
 
-.PHONY: build
-build:
-	$(GCCF) -o $(MAIN) $(MAIN).c 
+.PHONY: build_server
+build_server:
+	$(GCCF) -c $(SERVER).c
+	$(GCCF) $(SERVER).o -o $(SERVER)
 
-.PHONY: run
-run:
-	$(MAIN)
+.PHONY: build_client
+build_client:
+	$(GCCF) -c $(CLIENT).c
+	$(GCCF) $(CLIENT).o -o $(CLIENT)
 
-.PHONY: all
-all:
-	make build
-	make run
+.PHONY: run_server
+run_server:
+	make build_server
+	$(SERVER) $(PORT) ./$(SOCKET)
+
+.PHONY: run_client1
+run_client1:
+	make build_client
+	$(CLIENT) $(NAME) $(SOCKET) ./$(SOCKET)
+
+.PHONY: run_client2
+run_client2:
+	make build_client
+	$(CLIENT) $(NAME)2 $(SOCKET) ./$(SOCKET)
 
 .PHONY: clean
 clean:
-	rm -r $(MAIN)
+	rm *.o $(CLIENT) $(SERVER) $(SOCKET)
