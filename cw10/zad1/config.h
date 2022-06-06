@@ -2,8 +2,8 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
-#define CONNECTION_QUEUE_SIZE 1024
-#define EPOLL_EVENTS_SIZE 20
+#define Q_CONN_SIZE 1024
+#define EPOLL_EV_SIZE 20
 #define MAX_CLI_NUM 2048
 #define MAX_GAMES MAX_CLI_NUM / 2
 
@@ -13,7 +13,7 @@ typedef struct
     int     fd;
     int     paired_fd;
     int     game_id;
-    int     has_ping_responded;
+    int     if_rec_resp;
 } client_t;
 
 typedef struct
@@ -29,7 +29,7 @@ typedef struct
 {
     client_t    clients[MAX_CLI_NUM];
     game_t      games[MAX_GAMES];
-    int         *waiting_client_fd;
+    int         *waiting_cli_fd;
     int         *epoll;
 } args_t;
 
