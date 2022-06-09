@@ -46,7 +46,7 @@ int main(int argc, char *argv[])
     printf("\n\n");
     for (int i = 0; i < THREADS_NR; i++)
     {
-        printf("Thread %d TID: %d returned value: %d\n", i+1, hello_threads[i], *(int *)hello_results[i]);
+        printf("Thread %d TID: %ld returned value: %d\n", i+1, hello_threads[i], *(int *)hello_results[i]);
     }
     free(count);
     // koniec
