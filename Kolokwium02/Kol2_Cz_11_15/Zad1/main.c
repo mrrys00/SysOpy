@@ -13,7 +13,7 @@ void *hello(void *arg)
     //  i zwracającą status o wartości równej agrumentowi przesłanemu do funkcji
     int arg_val = *(int *)arg;
     printf("Hello %d TID: %ld\n", arg_val, pthread_self());
-    return arg_val;
+    return arg;
     // koniec
 }
 
@@ -38,7 +38,7 @@ int main(int argc, char *argv[])
     // i wypisz na ekran: Thread (indeks wątku+1) TID: (nr_TID) returned value: (status zakonczenia watku)
     for (int i = 0; i < THREADS_NR; i++)
     {
-        if (pthread_join(hello_threads[i], &hello_results[i]) != 0)
+        if (pthread_join(hello_threads[i], (void**) &hello_results[i]) != 0)
         {
             err(EXIT_FAILURE, "pthread_join");
         }
@@ -46,7 +46,7 @@ int main(int argc, char *argv[])
     printf("\n\n");
     for (int i = 0; i < THREADS_NR; i++)
     {
-        printf("Thread %d TID: %ld returned value: %d\n", i+1, hello_threads[i], hello_results[i]);
+        printf("Thread %d TID: %d returned value: %d\n", i+1, hello_threads[i], *(int *)hello_results[i]);
     }
     free(count);
     // koniec

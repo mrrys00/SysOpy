@@ -8,23 +8,30 @@
  * gdy wątek próbuje zablokować mutex który już ma zablokowany nie następowało zakleszczenie,
  * a zgłaszany był błąd.
  */
-void create_mutex(pthread_mutex_t* mutex) {
 
+void create_mutex(pthread_mutex_t *mutex)
+{
+    pthread_mutex_init(mutex, );
 }
 
-int main(void) {
+int main(void)
+{
     pthread_mutex_t mutex;
     create_mutex(&mutex);
 
     int ret = pthread_mutex_lock(&mutex);
-    if (ret != 0) {
+    if (ret != 0)
+    {
         puts("Error");
         exit(-1);
     }
     ret = pthread_mutex_lock(&mutex);
-    if (ret == EDEADLK) {
+    if (ret == EDEADLK)
+    {
         puts("Ok");
-    } else {
+    }
+    else
+    {
         printf("Error, ret = %d\n", ret);
         exit(-1);
     }
